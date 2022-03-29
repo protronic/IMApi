@@ -1,60 +1,37 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.FileProviders.Physical;
 using ImageMagick;
 
 namespace IMApi.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class IMController : ControllerBase
+public class IMController : Controller
 {
     private readonly ILogger<IMController> logger;
-    private IHostEnvironment env;
+    private IWebHostEnvironment env;
     private MagickImageInfo imi;
 
-    public IMController(ILogger<IMController> logger, IHostEnvironment env)
+    public IMController(ILogger<IMController> logger, IWebHostEnvironment env)
     {
         this.logger = logger;
         this.env = env;
         this.imi = new MagickImageInfo();
     }
 
-    public IActionResult Index()
+    [HttpGet(Name = "GetInfo")]
+    public IEnumerable<IMagickFormatInfo> Get()
     {
-        return View();
-    }
-
-    [HttpGet(Name = "GetImages")]
-    public IEnumerable<WeatherForecast> Get()
-    {
-
-        return null;
-    }
-
-
-    private void GetDirectories()
-    {
-        DataTable dt = new DataTable();
-        dt.Columns.Add("direction", typeof(string));
-        try
+        var fileInfos = new List<IMagickFormatInfo>();
+        var provider = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "images"));        
+        foreach (PhysicalFileInfo file in provider.GetDirectoryContents(""))
         {
-            string[] dirs = Directory.GetDirectories(@"yourpath", "*", SearchOption.AllDirectories);
-            foreach (string dir in dirs)
-            {
-                dt.Rows.Add(dir);
-            }
-            if (dirs.Length <= 0)
-            {
-                lbl.text = "your message"
-    
+            var info = GetFormatInformation(new FileInfo(file.PhysicalPath));
+            if (info != null)
+                fileInfos.Add(info);
         }
-
-            rpt.DataSource = dt; //your repeater 
-            rpt.DataBind(); //your repeater 
-        }
-        catch (Exception e)
-        {
-            lbl.text = "your message"//print message assign it to label
-    }
+        return fileInfos.AsEnumerable<IMagickFormatInfo>();
     }
 
     private static IMagickFormatInfo? GetFormatInformation(FileInfo file)
