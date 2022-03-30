@@ -12,45 +12,44 @@ public class IMController : Controller
     private readonly ILogger<IMController> logger;
     private IWebHostEnvironment env;
     private MagickImageInfo imi;
+    private PhysicalFileProvider imgRepo;
 
     public IMController(ILogger<IMController> logger, IWebHostEnvironment env)
     {
         this.logger = logger;
         this.env = env;
         this.imi = new MagickImageInfo();
+        this.imgRepo = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "images"));
     }
 
     [HttpGet(Name = "GetInfo")]
-    public IEnumerable<IMagickFormatInfo> Get()
+    public IEnumerable<IFileInfo> Get()
     {
-        var fileInfos = new List<IMagickFormatInfo>();
-        var provider = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "images"));
-        foreach (PhysicalFileInfo file in provider.GetDirectoryContents(""))
-        {
-            var info = GetFormatInformation(new FileInfo(file.PhysicalPath));
-            if (info != null)
-                fileInfos.Add(info);
-        }
-        return fileInfos.AsEnumerable<IMagickFormatInfo>();
+        return (from f in this.imgRepo.GetDirectoryContents("")
+                where GetFormatInformation(f) != null
+                select f
+                ).ToArray();
     }
 
-    private static IMagickFormatInfo? GetFormatInformation(FileInfo file)
+    private static IMagickFormatInfo? GetFormatInformation(IFileInfo file)
     {
-        IMagickFormatInfo? info = MagickNET.GetFormatInformation(file);
-        if (info != null)
-            return info;
+        IMagickFormatInfo? info = MagickNET.GetFormatInformation(file.PhysicalPath);
+        if (info == null)
+            info = MagickNET.GetFormatInformation(new MagickImageInfo(file.PhysicalPath).Format);
+        
+        
 
-        MagickImageInfo imageInfo = new MagickImageInfo(file);
-        return MagickNET.GetFormatInformation(imageInfo.Format);
+
+        return info;
     }
 
-    public static void ConvertImageFromOneFormatToAnother()
+    private void ConvertImageFromOneFormatToAnother(IFileInfo file)
     {
         // Read first frame of gif image
-        using (var image = new MagickImage(SampleFiles.SnakewareGif))
+        using (var image = new MagickImage(file.PhysicalPath))
         {
             // Save frame as jpg
-            image.Write(SampleFiles.OutputDirectory + "Snakeware.jpg");
+            image.Write(this.imgRepo.GetFileInfo("out/" + "Snakeware.jpg").PhysicalPath);
         }
 
         var settings = new MagickReadSettings();
@@ -69,45 +68,6 @@ public class IMController : Controller
                 // Write the image to the memorystream
                 image.Write(memStream);
             }
-        }
-
-        // Read image from file
-        using (var image = new MagickImage(SampleFiles.SnakewarePng))
-        {
-            // Sets the output format to jpeg
-            image.Format = MagickFormat.Jpeg;
-
-            // Create byte array that contains a jpeg file
-            byte[] data = image.ToByteArray();
-        }
-    }
-
-    public static void ConvertCmykToRgb()
-    {
-        // Uses sRGB.icm, eps/pdf produce better result when you set this before loading.
-        var settings = new MagickReadSettings();
-        settings.ColorSpace = ColorSpace.sRGB;
-
-        // Read image from file
-        using (var image = new MagickImage(SampleFiles.SnakewareJpg))
-        {
-            // Will use the CMYK profile if the image does not contain a color profile.
-            // The second profile will transform the colorspace from CMYK to RGB
-            image.TransformColorSpace(ColorProfile.USWebCoatedSWOP, ColorProfile.SRGB);
-
-            // Save image as png
-            image.Write(SampleFiles.OutputDirectory + "Snakeware.png");
-        }
-
-        // Read image from file
-        using (var image = new MagickImage(SampleFiles.SnakewareJpg))
-        {
-            // Will use the CMYK profile if your image does not contain a color profile.
-            // The second profile will transform the colorspace from your custom icc profile
-            image.TransformColorSpace(ColorProfile.USWebCoatedSWOP, new ColorProfile(SampleFiles.YourProfileIcc));
-
-            // Save image as tiff
-            image.Write(SampleFiles.OutputDirectory + "Snakeware.tiff");
         }
     }
 }
