@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.FileProviders.Physical;
 using ImageMagick;
+using System.IO;
+using System.Security.Cryptography;
+using DamienG.Security.Cryptography;
 
 namespace IMApi.Controllers;
 
@@ -36,11 +39,23 @@ public class IMController : Controller
         IMagickFormatInfo? info = MagickNET.GetFormatInformation(file.PhysicalPath);
         if (info == null)
             info = MagickNET.GetFormatInformation(new MagickImageInfo(file.PhysicalPath).Format);
-        
-        
+
+
 
 
         return info;
+    }
+
+    private string checkSum(IFileInfo file)
+    {
+        Crc32 crc32 = new Crc32();
+        String hash = String.Empty;
+
+        using (Stream fs = file.CreateReadStream())
+            foreach (byte b in crc32.ComputeHash(fs)) hash += b.ToString("x2").ToLower();
+
+        Console.WriteLine("CRC-32 is {0}", hash);
+        return hash;
     }
 
     private void ConvertImageFromOneFormatToAnother(IFileInfo file)
@@ -49,7 +64,7 @@ public class IMController : Controller
         using (var image = new MagickImage(file.PhysicalPath))
         {
             // Save frame as jpg
-            image.Write(this.imgRepo.GetFileInfo("out/" + "Snakeware.jpg").PhysicalPath);
+            image.Write(this.imgRepo.GetFileInfo("out/" + file.Name + ".png").PhysicalPath);
         }
 
         var settings = new MagickReadSettings();
