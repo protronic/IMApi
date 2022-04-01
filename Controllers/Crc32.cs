@@ -23,11 +23,11 @@ namespace DamienG.Security.Cryptography
         public const UInt32 DefaultPolynomial = 0xedb88320u;
         public const UInt32 DefaultSeed = 0xffffffffu;
 
-        static UInt32[] defaultTable;
+        static UInt32[]? defaultTable;
 
         readonly UInt32 seed;
         readonly UInt32[] table;
-        public UInt32 hash;
+        UInt32 hash;
 
         /// <summary>
         /// Create a new <see cref="Crc32"/> with a <see cref="DefaultPolynomial"/> and <see cref="DefaultSeed"/>.
@@ -61,7 +61,7 @@ namespace DamienG.Security.Cryptography
         protected override void HashCore(byte[] array, int ibStart, int cbSize)
         {
             hash = CalculateHash(table, hash, array, ibStart, cbSize);
-        }
+        }        
 
         /// <inheritdoc/>
         protected override byte[] HashFinal()
@@ -161,6 +161,12 @@ namespace DamienG.Security.Cryptography
                 Array.Reverse(result);
 
             return result;
+        }
+
+        static public UInt32 getUIntResult(byte[] bytes) {                        
+            if (BitConverter.IsLittleEndian)
+                Array.Reverse(bytes);
+            return BitConverter.ToUInt32(bytes, 0);
         }
     }
 }

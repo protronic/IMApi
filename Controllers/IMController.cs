@@ -32,7 +32,7 @@ public class IMController : Controller
                          select checkFiles(f)
                 ).ToArray();
         db.SaveChanges();
-        
+
         return listFiles;
     }
 
@@ -42,7 +42,7 @@ public class IMController : Controller
         if (info == null)
             info = MagickNET.GetFormatInformation(new MagickImageInfo(file.PhysicalPath).Format);
 
-
+        
 
 
         return info;
@@ -52,12 +52,21 @@ public class IMController : Controller
     {
         String hash = String.Empty;
         using (Stream fs = file.CreateReadStream())
-            foreach (byte b in crc32.ComputeHash(fs)) hash += b.ToString("x2").ToLower();
+        {
+            var bytes = crc32.ComputeHash(fs);
+            foreach (byte b in bytes) hash += b.ToString("x2").ToLower();
 
-        logger.LogInformation("CRC-32 is {0}", hash);
-        var cf = new CheckedFile { FileName = file.Name, FileLength=file.Length, FileCrcId = crc32.hash };
-        this.db.Add(cf);
-        return cf;
+            logger.LogInformation("CRC-32 is {0}", hash);
+            var cf = new CheckedFile
+            {
+                FileName = file.Name,
+                FileLength = file.Length,
+                FileCrcId = Crc32.getUIntResult(bytes)
+            };
+            db.Add(cf);
+            return cf;
+        }
+
     }
 
     private void ConvertImageFromOneFormatToAnother(IFileInfo file)
