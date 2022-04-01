@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -17,7 +16,8 @@ namespace IMApi.Migrations
                 {
                     FileCrcId = table.Column<uint>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    FileInfo = table.Column<byte[]>(type: "jsonb", nullable: true)
+                    FileName = table.Column<string>(type: "TEXT", nullable: true),
+                    FileLength = table.Column<long>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {

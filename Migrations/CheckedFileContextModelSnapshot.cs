@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Microsoft.Extensions.FileProviders;
 using Protronic.CeckedFileInfo;
 
 #nullable disable
@@ -23,8 +22,11 @@ namespace IMApi.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<IFileInfo>("FileInfo")
-                        .HasColumnType("jsonb");
+                    b.Property<long>("FileLength")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("FileName")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("FileCrcId");
 

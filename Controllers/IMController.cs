@@ -21,15 +21,19 @@ public class IMController : Controller
         this.logger = logger;
         this.env = env;
         this.imgRepo = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "images"));
+        logger.LogInformation($"Database path: {db.DbPath}.");
     }
 
     [HttpGet(Name = "GetInfo")]
     public IEnumerable<CheckedFile> Get()
     {
-        return (from f in this.imgRepo.GetDirectoryContents("")
-                where GetFormatInformation(f) != null
-                select checkFiles(f)
+        var listFiles = (from f in this.imgRepo.GetDirectoryContents("")
+                         where GetFormatInformation(f) != null
+                         select checkFiles(f)
                 ).ToArray();
+        db.SaveChanges();
+        
+        return listFiles;
     }
 
     private static IMagickFormatInfo? GetFormatInformation(IFileInfo file)
@@ -44,15 +48,16 @@ public class IMController : Controller
         return info;
     }
 
-    private CheckedFile checkFiles(IFileInfo file)    {
-        
+    private CheckedFile checkFiles(IFileInfo file)
+    {
         String hash = String.Empty;
-
         using (Stream fs = file.CreateReadStream())
             foreach (byte b in crc32.ComputeHash(fs)) hash += b.ToString("x2").ToLower();
 
-        Console.WriteLine("CRC-32 is {0}", hash);
-        return new CheckedFile { FileInfo = file, FileCrcId = crc32.hash };
+        logger.LogInformation("CRC-32 is {0}", hash);
+        var cf = new CheckedFile { FileName = file.Name, FileLength=file.Length, FileCrcId = crc32.hash };
+        this.db.Add(cf);
+        return cf;
     }
 
     private void ConvertImageFromOneFormatToAnother(IFileInfo file)

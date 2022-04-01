@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using System.Runtime.InteropServices; 
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -12,9 +13,8 @@ public class CheckedFileContext : DbContext
 
     public CheckedFileContext()
     {
-        var folder = Environment.SpecialFolder.LocalApplicationData;
-        var path = Environment.GetFolderPath(folder);
-        DbPath = System.IO.Path.Join(path, "CeckedFileInfo.db");
+        // var folder = Environment.SpecialFolder.LocalApplicationData;        
+        DbPath = System.IO.Path.Join("./wwwroot/", "CeckedFileInfo.db");
     }
 
     // The following configures EF to create a Sqlite database file in the
@@ -26,7 +26,7 @@ public class CheckedFileContext : DbContext
 public record CheckedFile
 {
     [Key]
-    public UInt32 FileCrcId { get; init; }
-    [Column(TypeName = "jsonb")]
-    public IFileInfo? FileInfo { get; init; }
+    public uint FileCrcId { get; init; }
+    public string? FileName { get; init; }
+    public long FileLength { get; init; }
 }

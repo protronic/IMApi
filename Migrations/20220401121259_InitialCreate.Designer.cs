@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Microsoft.Extensions.FileProviders;
 using Protronic.CeckedFileInfo;
 
 #nullable disable
@@ -11,7 +10,7 @@ using Protronic.CeckedFileInfo;
 namespace IMApi.Migrations
 {
     [DbContext(typeof(CheckedFileContext))]
-    [Migration("20220401091648_InitialCreate")]
+    [Migration("20220401121259_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -26,8 +25,11 @@ namespace IMApi.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<IFileInfo>("FileInfo")
-                        .HasColumnType("jsonb");
+                    b.Property<long>("FileLength")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("FileName")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("FileCrcId");
 
