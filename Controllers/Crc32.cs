@@ -27,7 +27,7 @@ namespace DamienG.Security.Cryptography
 
         readonly UInt32 seed;
         readonly UInt32[] table;
-        UInt32 hash;
+        public UInt32 hash;
 
         /// <summary>
         /// Create a new <see cref="Crc32"/> with a <see cref="DefaultPolynomial"/> and <see cref="DefaultSeed"/>.

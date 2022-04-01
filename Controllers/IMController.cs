@@ -1,10 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.FileProviders.Physical;
 using ImageMagick;
-using System.IO;
-using System.Security.Cryptography;
 using DamienG.Security.Cryptography;
+using Protronic.CeckedFileInfo;
 
 namespace IMApi.Controllers;
 
@@ -14,23 +12,23 @@ public class IMController : Controller
 {
     private readonly ILogger<IMController> logger;
     private IWebHostEnvironment env;
-    private MagickImageInfo imi;
     private PhysicalFileProvider imgRepo;
+    private CheckedFileContext db = new CheckedFileContext();
+    private Crc32 crc32 = new Crc32();
 
     public IMController(ILogger<IMController> logger, IWebHostEnvironment env)
     {
         this.logger = logger;
         this.env = env;
-        this.imi = new MagickImageInfo();
         this.imgRepo = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "images"));
     }
 
     [HttpGet(Name = "GetInfo")]
-    public IEnumerable<IFileInfo> Get()
+    public IEnumerable<CheckedFile> Get()
     {
         return (from f in this.imgRepo.GetDirectoryContents("")
                 where GetFormatInformation(f) != null
-                select f
+                select checkFiles(f)
                 ).ToArray();
     }
 
@@ -46,16 +44,15 @@ public class IMController : Controller
         return info;
     }
 
-    private string checkSum(IFileInfo file)
-    {
-        Crc32 crc32 = new Crc32();
+    private CheckedFile checkFiles(IFileInfo file)    {
+        
         String hash = String.Empty;
 
         using (Stream fs = file.CreateReadStream())
             foreach (byte b in crc32.ComputeHash(fs)) hash += b.ToString("x2").ToLower();
 
         Console.WriteLine("CRC-32 is {0}", hash);
-        return hash;
+        return new CheckedFile { FileInfo = file, FileCrcId = crc32.hash };
     }
 
     private void ConvertImageFromOneFormatToAnother(IFileInfo file)
