@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Protronic.CeckedFileInfo;
 public class CheckedFileContext : DbContext
 {
-    public DbSet<CheckedFile>? Files { get; set; }
+    public DbSet<CheckedFile> Files { get; set; }
     
     public string DbPath { get; }
 
@@ -12,6 +12,7 @@ public class CheckedFileContext : DbContext
     {
         // var folder = Environment.SpecialFolder.LocalApplicationData;        
         DbPath = System.IO.Path.Join("./wwwroot/", "CeckedFileInfo.db");
+        _ = this.Files ?? throw new ArgumentNullException(nameof(Files)); 
     }
 
     // The following configures EF to create a Sqlite database file in the

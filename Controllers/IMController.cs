@@ -12,7 +12,8 @@ public class IMController : Controller
 {
     private readonly ILogger<IMController> logger;
     private IWebHostEnvironment env;
-    private PhysicalFileProvider imgRepo;
+    private PhysicalFileProvider originalRepo;
+    private PhysicalFileProvider outputRepo;
     private CheckedFileContext db = new CheckedFileContext();
     private Crc32 crc32 = new Crc32();
 
@@ -20,20 +21,22 @@ public class IMController : Controller
     {
         this.logger = logger;
         this.env = env;
-        this.imgRepo = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "images"));
+        this.originalRepo = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "images"));
+        this.outputRepo = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "out"));
         logger.LogInformation($"Database path: {db.DbPath}.");
+
+        MagickNET.Initialize();
+        var listFiles = (from f in this.originalRepo.GetDirectoryContents("")
+                         where GetFormatInformation(f) != null
+                         select checkFiles(f)
+                ).ToArray();
+        db.SaveChanges();
     }
 
     [HttpGet(Name = "GetInfo")]
     public IEnumerable<CheckedFile> Get()
     {
-        var listFiles = (from f in this.imgRepo.GetDirectoryContents("")
-                         where GetFormatInformation(f) != null
-                         select checkFiles(f)
-                ).ToArray();
-        db.SaveChanges();
-
-        return listFiles;
+        return db.Files.AsEnumerable();
     }
 
     private IMagickFormatInfo? GetFormatInformation(IFileInfo file)
@@ -62,8 +65,8 @@ public class IMController : Controller
                 FileName = file.Name,
                 FileLength = file.Length,
                 FileCrcId = Crc32.getUIntResult(bytes)
-            };            
-            
+            };
+
             db.Update(cf);
             return cf;
         }
@@ -76,7 +79,9 @@ public class IMController : Controller
         using (var image = new MagickImage(file.PhysicalPath))
         {
             // Save frame as jpg
-            image.Write(this.imgRepo.GetFileInfo("out/" + file.Name + "_800x600").PhysicalPath);
+            var fn = Path.GetFileNameWithoutExtension(file.PhysicalPath);
+            var outfile = outputRepo.GetFileInfo(fn + "_800x600.png");
+            image.Write(outfile.PhysicalPath);
         }
 
         var settings = new MagickReadSettings();
