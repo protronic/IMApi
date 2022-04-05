@@ -36,13 +36,13 @@ public class IMController : Controller
         return listFiles;
     }
 
-    private static IMagickFormatInfo? GetFormatInformation(IFileInfo file)
+    private IMagickFormatInfo? GetFormatInformation(IFileInfo file)
     {
         IMagickFormatInfo? info = MagickNET.GetFormatInformation(file.PhysicalPath);
         if (info == null)
             info = MagickNET.GetFormatInformation(new MagickImageInfo(file.PhysicalPath).Format);
 
-        
+        ConvertImageFromOneFormatToAnother(file);
 
 
         return info;
@@ -62,8 +62,9 @@ public class IMController : Controller
                 FileName = file.Name,
                 FileLength = file.Length,
                 FileCrcId = Crc32.getUIntResult(bytes)
-            };
-            db.Add(cf);
+            };            
+            
+            db.Update(cf);
             return cf;
         }
 
@@ -75,7 +76,7 @@ public class IMController : Controller
         using (var image = new MagickImage(file.PhysicalPath))
         {
             // Save frame as jpg
-            image.Write(this.imgRepo.GetFileInfo("out/" + file.Name + ".png").PhysicalPath);
+            image.Write(this.imgRepo.GetFileInfo("out/" + file.Name + "_800x600").PhysicalPath);
         }
 
         var settings = new MagickReadSettings();
