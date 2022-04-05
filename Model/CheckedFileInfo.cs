@@ -4,7 +4,8 @@ using System.ComponentModel.DataAnnotations;
 namespace Protronic.CeckedFileInfo;
 public class CheckedFileContext : DbContext
 {
-    public DbSet<CheckedFile> Files { get; set; }
+    public DbSet<OriginalFile> OriginalFiles { get; set; }
+    public DbSet<ConvertedFile> ConvertedFiles { get; set; }
     
     public string DbPath { get; }
 
@@ -12,7 +13,8 @@ public class CheckedFileContext : DbContext
     {
         // var folder = Environment.SpecialFolder.LocalApplicationData;        
         DbPath = System.IO.Path.Join("./wwwroot/", "CeckedFileInfo.db");
-        _ = this.Files ?? throw new ArgumentNullException(nameof(Files)); 
+        _ = this.OriginalFiles ?? throw new ArgumentNullException(nameof(OriginalFiles));
+        _ = this.ConvertedFiles ?? throw new ArgumentNullException(nameof(OriginalFiles));  
     }
 
     // The following configures EF to create a Sqlite database file in the
@@ -21,7 +23,16 @@ public class CheckedFileContext : DbContext
         => options.UseSqlite($"Data Source={DbPath}");
 }
 
-public record CheckedFile
+public record OriginalFile
+{
+    [Key]
+    public uint FileCrcId { get; init; }
+    public string? FileName { get; init; }
+    public long FileLength { get; init; }
+    public List<ConvertedFile> convertedFiles { get; } = new();
+}
+
+public record ConvertedFile
 {
     [Key]
     public uint FileCrcId { get; init; }

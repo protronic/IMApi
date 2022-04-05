@@ -1,4 +1,5 @@
 using Microsoft.Extensions.FileProviders;
+using ImageMagick;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +39,7 @@ app.UseDirectoryBrowser(new DirectoryBrowserOptions
     RequestPath = requestPath
 });
 
+MagickNET.Initialize();
 
 app.UseAuthorization();
 

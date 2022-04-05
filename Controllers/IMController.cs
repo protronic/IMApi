@@ -21,11 +21,10 @@ public class IMController : Controller
     {
         this.logger = logger;
         this.env = env;
-        this.originalRepo = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "images"));
-        this.outputRepo = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "out"));
+        this.originalRepo = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "images", "orig"));
+        this.outputRepo = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "images","out"));
         logger.LogInformation($"Database path: {db.DbPath}.");
 
-        MagickNET.Initialize();
         var listFiles = (from f in this.originalRepo.GetDirectoryContents("")
                          where GetFormatInformation(f) != null
                          select checkFiles(f)
@@ -34,9 +33,9 @@ public class IMController : Controller
     }
 
     [HttpGet(Name = "GetInfo")]
-    public IEnumerable<CheckedFile> Get()
+    public IEnumerable<OriginalFile> Get()
     {
-        return db.Files.AsEnumerable();
+        return db.OriginalFiles.AsEnumerable();
     }
 
     private IMagickFormatInfo? GetFormatInformation(IFileInfo file)
@@ -51,7 +50,7 @@ public class IMController : Controller
         return info;
     }
 
-    private CheckedFile checkFiles(IFileInfo file)
+    private OriginalFile checkFiles(IFileInfo file)
     {
         String hash = String.Empty;
         using (Stream fs = file.CreateReadStream())
@@ -60,7 +59,7 @@ public class IMController : Controller
             foreach (byte b in bytes) hash += b.ToString("x2").ToLower();
 
             logger.LogInformation("CRC-32 is {0}", hash);
-            var cf = new CheckedFile
+            var cf = new OriginalFile
             {
                 FileName = file.Name,
                 FileLength = file.Length,
