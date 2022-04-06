@@ -13,7 +13,7 @@ public class IMController : Controller
     private readonly ILogger<IMController> logger;
     private IWebHostEnvironment env;
     private PhysicalFileProvider originalRepo;
-    private PhysicalFileProvider outputRepo;
+    private PhysicalFileProvider convertedRepo;
     private CheckedFileContext db = new CheckedFileContext();
     private Crc32 crc32 = new Crc32();
 
@@ -22,13 +22,18 @@ public class IMController : Controller
         this.logger = logger;
         this.env = env;
         this.originalRepo = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "images", "orig"));
-        this.outputRepo = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "images","out"));
+        this.convertedRepo = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "images", "out"));
+
         logger.LogInformation($"Database path: {db.DbPath}.");
 
-        var listFiles = (from f in this.originalRepo.GetDirectoryContents("")
-                         where GetFormatInformation(f) != null
-                         select checkFiles(f)
-                ).ToArray();
+        foreach (var f in this.originalRepo.GetDirectoryContents(""))
+        {
+            if (GetFormatInformation(f) != null) {
+                var originalFile = checkFileHasChanged(f);
+                processConverts(originalFile);
+            }    
+        };
+
         db.SaveChanges();
     }
 
@@ -40,17 +45,20 @@ public class IMController : Controller
 
     private IMagickFormatInfo? GetFormatInformation(IFileInfo file)
     {
-        IMagickFormatInfo? info = MagickNET.GetFormatInformation(file.PhysicalPath);
-        if (info == null)
-            info = MagickNET.GetFormatInformation(new MagickImageInfo(file.PhysicalPath).Format);
-
-        ConvertImageFromOneFormatToAnother(file);
-
-
-        return info;
+        return MagickNET.GetFormatInformation(file.PhysicalPath)
+            ?? MagickNET.GetFormatInformation(new MagickImageInfo(file.PhysicalPath).Format);
     }
 
-    private OriginalFile checkFiles(IFileInfo file)
+    private void processConverts(OriginalFile originalFile) {
+         _ = originalFile.FileName ?? throw new NullReferenceException(nameof(originalFile.FileName));
+        String currentConversion = "800x600";
+        foreach (ConvertedFile cf in originalFile.convertedFiles) {
+            var cf = this.convertedRepo.GetFileInfo(db.GenerateConvertedFileName(originalFile.FileName, currentConversion));
+        }
+
+    }
+
+    private OriginalFile checkFileHasChanged(IFileInfo file)
     {
         String hash = String.Empty;
         using (Stream fs = file.CreateReadStream())
@@ -59,27 +67,32 @@ public class IMController : Controller
             foreach (byte b in bytes) hash += b.ToString("x2").ToLower();
 
             logger.LogInformation("CRC-32 is {0}", hash);
-            var cf = new OriginalFile
+            var originalFile = new OriginalFile
             {
+                Artikelnummer = UInt32.Parse(Path.GetFileNameWithoutExtension(file.PhysicalPath)),
                 FileName = file.Name,
                 FileLength = file.Length,
-                FileCrcId = Crc32.getUIntResult(bytes)
+                FileCrc = Crc32.getUIntResult(bytes)
             };
 
-            db.Update(cf);
-            return cf;
+            var changes = db.Update(originalFile);
+            if (changes.Property(f => f.FileCrc).IsModified)
+            {
+                logger.LogInformation("Orginal File has changed, drop converted files");
+                originalFile.convertedFiles.Clear();
+            }            
+            return originalFile;
         }
-
     }
 
-    private void ConvertImageFromOneFormatToAnother(IFileInfo file)
+    private void ConvertImageFromOneFormatToAnother(IFileInfo file, String conversionName)
     {
         // Read first frame of gif image
         using (var image = new MagickImage(file.PhysicalPath))
         {
             // Save frame as jpg
             var fn = Path.GetFileNameWithoutExtension(file.PhysicalPath);
-            var outfile = outputRepo.GetFileInfo(fn + "_800x600.png");
+            var outfile = convertedRepo.GetFileInfo(fn + "_" + conversionName + ".png");
             image.Write(outfile.PhysicalPath);
         }
 
