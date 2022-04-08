@@ -53,11 +53,10 @@ public class IMController : Controller
         _ = originalFile.FileName ?? throw new NullReferenceException(nameof(originalFile.FileName));
         String currentConversion = "800x600";
         var fileName = Util.getFileName(originalFile);
-        var convertedFileInfo = this.convertedRepo.GetFileInfo(fileName);
         var convertedFile = originalFile.convertedFiles.SingleOrDefault(c => c.FileName == fileName);
         if (convertedFile == null)
         {
-            ConvertImageFromOneFormatToAnother(fileName, currentConversion);
+            var convertedFileInfo = ConvertImageFromOneFormatToAnother(fileName, currentConversion);
             Util.checkFile(convertedFileInfo, logger, out string name, out string num, out string type, out uint crc);
             originalFile.convertedFiles.Add(new ConvertedFile
             {
@@ -66,7 +65,7 @@ public class IMController : Controller
                 FileType = type,
                 FileCrc = crc,
                 FileLength = convertedFileInfo.Length,
-                WebURL = new Uri("/img/out/" + Path.GetFileName(convertedFileInfo.PhysicalPath), UriKind.Relative)
+                WebURL = new Uri("/img/out/" + currentConversion + "/" + fileName, UriKind.Relative)
             });
         }
     }
@@ -87,13 +86,15 @@ public class IMController : Controller
         return originalFile;
     }
 
-    private void ConvertImageFromOneFormatToAnother(string srcfile, String conversionName, String fileType = "png")
+    private IFileInfo ConvertImageFromOneFormatToAnother(string srcfile, String conversionName, String fileType = "png")
     {
+        IFileInfo outfile;
+        var srcFilePath = originalRepo.GetFileInfo(srcfile).PhysicalPath;
         // Read first frame of gif image
-        using (var image = new MagickImage(originalRepo.GetFileInfo(srcfile).PhysicalPath))
+        using (var image = new MagickImage(srcFilePath))
         {
             // Save frame as jpg
-            var outfile = convertedRepo.GetFileInfo(Path.Combine(conversionName, srcfile) + "." + fileType);
+            outfile = convertedRepo.GetFileInfo(Path.Combine(conversionName, Path.GetFileNameWithoutExtension(srcFilePath)) + "." + fileType);
             image.Write(outfile.PhysicalPath);
         }
 
@@ -114,5 +115,6 @@ public class IMController : Controller
                 image.Write(memStream);
             }
         }
+        return outfile;
     }
 }
