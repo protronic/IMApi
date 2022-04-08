@@ -15,7 +15,7 @@ namespace IMApi.Migrations
                 columns: table => new
                 {
                     FileName = table.Column<string>(type: "TEXT", nullable: false),
-                    Artikelnummer = table.Column<uint>(type: "INTEGER", nullable: false),
+                    Artikelnummer = table.Column<string>(type: "TEXT", nullable: true),
                     FileType = table.Column<string>(type: "TEXT", nullable: true),
                     FileCrc = table.Column<uint>(type: "INTEGER", nullable: false),
                     FileLength = table.Column<long>(type: "INTEGER", nullable: false),
@@ -32,6 +32,7 @@ namespace IMApi.Migrations
                 {
                     FileName = table.Column<string>(type: "TEXT", nullable: false),
                     ConversionType = table.Column<string>(type: "TEXT", nullable: true),
+                    FileType = table.Column<string>(type: "TEXT", nullable: true),
                     FileCrc = table.Column<uint>(type: "INTEGER", nullable: false),
                     FileLength = table.Column<long>(type: "INTEGER", nullable: false),
                     WebURL = table.Column<string>(type: "TEXT", nullable: true),

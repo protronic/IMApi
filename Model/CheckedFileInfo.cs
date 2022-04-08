@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
+using DamienG.Security.Cryptography;
 
 namespace Protronic.CeckedFileInfo;
 
@@ -29,7 +31,7 @@ public record OriginalFile
 {
     [Key]
     public string? FileName { get; init; }
-    public uint Artikelnummer { get; init; }
+    public string? Artikelnummer { get; init; }
     public string? FileType { get; set; }
     public uint FileCrc { get; init; }
     public long FileLength { get; init; }
@@ -42,6 +44,7 @@ public record ConvertedFile
     [Key]
     public string? FileName { get; init; }
     public string? ConversionType { get; init; }
+    public string? FileType { get; set; }
     public uint FileCrc { get; init; }
     public long FileLength { get; init; }
     public Uri? WebURL { get; init; }
@@ -59,13 +62,13 @@ static public class Util
     {
         return name + "_" + conversionName + "." + fileType;
     }
-    public static void GetInfoFromFileName(string originalFileName, out string name, out uint artikelnummer, out string fileType)
+    public static void GetInfoFromFileName(string originalFileName, out string name, out string artikelnummer, out string fileType)
     {
         var r = new Regex(@"(\d+)_?(\d+)?.(\w+)", RegexOptions.IgnoreCase);
         var match = r.Match(originalFileName);
         if (match.Success)
         {
-            artikelnummer = uint.Parse(match.Groups[1].Value);
+            artikelnummer = match.Groups[1].Value;
             name = match.Groups[1].Value + match.Groups[2].Value;
             fileType = match.Groups[3].Value;
         }
@@ -94,6 +97,24 @@ static public class Util
 
             default:
                 throw new ArgumentOutOfRangeException();
+        }
+    }
+
+    public static void checkFile(IFileInfo file, ILogger logger, out string filename, out string artikelnummer, out string filetype, out uint crc)
+    {
+        Crc32 crc32 = new Crc32();
+        String hash = String.Empty;
+        using (Stream fs = file.CreateReadStream())
+        {
+            var bytes = crc32.ComputeHash(fs);
+            foreach (byte b in bytes) hash += b.ToString("x2").ToLower();
+
+            logger.LogInformation("CRC-32 is {0}", hash);
+            Util.GetInfoFromFileName(Path.GetFileName(file.PhysicalPath), out string name, out string num, out string type);
+            filename = name;
+            artikelnummer =num;
+            filetype = type;
+            crc = Crc32.getUIntResult(bytes);
         }
     }
 }

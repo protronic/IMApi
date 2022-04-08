@@ -10,7 +10,7 @@ using Protronic.CeckedFileInfo;
 namespace IMApi.Migrations
 {
     [DbContext(typeof(CheckedFileContext))]
-    [Migration("20220408055256_InitialCreate")]
+    [Migration("20220408120053_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -33,6 +33,9 @@ namespace IMApi.Migrations
                     b.Property<long>("FileLength")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("FileType")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("OriginalFileFileName")
                         .HasColumnType("TEXT");
 
@@ -51,8 +54,8 @@ namespace IMApi.Migrations
                     b.Property<string>("FileName")
                         .HasColumnType("TEXT");
 
-                    b.Property<uint>("Artikelnummer")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Artikelnummer")
+                        .HasColumnType("TEXT");
 
                     b.Property<uint>("FileCrc")
                         .HasColumnType("INTEGER");

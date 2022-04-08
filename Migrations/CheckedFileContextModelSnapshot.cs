@@ -30,6 +30,9 @@ namespace IMApi.Migrations
                     b.Property<long>("FileLength")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("FileType")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("OriginalFileFileName")
                         .HasColumnType("TEXT");
 
@@ -48,8 +51,8 @@ namespace IMApi.Migrations
                     b.Property<string>("FileName")
                         .HasColumnType("TEXT");
 
-                    b.Property<uint>("Artikelnummer")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Artikelnummer")
+                        .HasColumnType("TEXT");
 
                     b.Property<uint>("FileCrc")
                         .HasColumnType("INTEGER");

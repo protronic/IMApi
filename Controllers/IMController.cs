@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.FileProviders;
 using ImageMagick;
-using DamienG.Security.Cryptography;
 using Protronic.CeckedFileInfo;
 
 namespace IMApi.Controllers;
@@ -15,7 +14,6 @@ public class IMController : Controller
     private PhysicalFileProvider originalRepo;
     private PhysicalFileProvider convertedRepo;
     private CheckedFileContext db = new CheckedFileContext();
-    private Crc32 crc32 = new Crc32();
 
     public IMController(ILogger<IMController> logger, IWebHostEnvironment env)
     {
@@ -54,38 +52,38 @@ public class IMController : Controller
     {
         _ = originalFile.FileName ?? throw new NullReferenceException(nameof(originalFile.FileName));
         String currentConversion = "800x600";
-        foreach (ConvertedFile cf in originalFile.convertedFiles)
+        var convertedFileName = Util.GenerateConvertedFileName(originalFile.FileName, currentConversion);
+        var convertedFileInfo = this.convertedRepo.GetFileInfo(convertedFileName);
+        var convertedFile = originalFile.convertedFiles.SingleOrDefault(c => c.FileName == convertedFileName);
+        if (convertedFile == null)
         {
-            this.convertedRepo.GetFileInfo(Util.GenerateConvertedFileName(originalFile.FileName, currentConversion));
-
+            ConvertImageFromOneFormatToAnother(convertedFileInfo, currentConversion);
+            Util.checkFile(convertedFileInfo, logger, out string name, out string num, out string type, out uint crc);
+            originalFile.convertedFiles.Add(new ConvertedFile{
+                FileName = name,
+                ConversionType = currentConversion,
+                FileType = type,
+                FileCrc = crc,
+                FileLength = convertedFileInfo.Length,
+                WebURL = new Uri("/img/out/" + Path.GetFileName(convertedFileInfo.PhysicalPath), UriKind.Relative)
+            });
         }
-
     }
 
     private OriginalFile checkFileHasChanged(IFileInfo file)
     {
-        String hash = String.Empty;
-        using (Stream fs = file.CreateReadStream())
+        Util.checkFile(file, logger, out string name, out string num, out string type, out uint crc);
+        var originalFile = db.OriginalFiles.SingleOrDefault(c => c.FileName == name) ?? new OriginalFile
         {
-            var bytes = crc32.ComputeHash(fs);
-            foreach (byte b in bytes) hash += b.ToString("x2").ToLower();
-
-            logger.LogInformation("CRC-32 is {0}", hash);
-            Util.GetInfoFromFileName(Path.GetFileName(file.PhysicalPath), out string name, out uint num, out string type);
-
-            var originalFile = db.OriginalFiles.SingleOrDefault(c => c.FileName == name) ?? new OriginalFile
-            {
-                FileName = name,
-                Artikelnummer = num,
-                FileType = type,
-                FileLength = file.Length,
-                FileCrc = Crc32.getUIntResult(bytes),
-                WebURL = new Uri("/img/orig/" + Path.GetFileName(file.PhysicalPath), UriKind.Relative)
-            };
-
-            Util.AddOrUpdate(db, originalFile, logger);
-            return originalFile;
-        }
+            FileName = name,
+            Artikelnummer = num,
+            FileType = type,
+            FileLength = file.Length,
+            FileCrc = crc,
+            WebURL = new Uri("/img/orig/" + Path.GetFileName(file.PhysicalPath), UriKind.Relative)
+        };
+        Util.AddOrUpdate(db, originalFile, logger);
+        return originalFile;
     }
 
     private void ConvertImageFromOneFormatToAnother(IFileInfo file, String conversionName)
