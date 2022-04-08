@@ -42,12 +42,12 @@ public record OriginalFile
 public record ConvertedFile
 {
     [Key]
+    public Uri? WebURL { get; init; }
     public string? FileName { get; init; }
     public string? ConversionType { get; init; }
     public string? FileType { get; set; }
     public uint FileCrc { get; init; }
     public long FileLength { get; init; }
-    public Uri? WebURL { get; init; }
 }
 
 public class WrongFilenameFormatException : ArgumentException

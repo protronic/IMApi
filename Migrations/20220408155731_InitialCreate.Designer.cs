@@ -10,7 +10,7 @@ using Protronic.CeckedFileInfo;
 namespace IMApi.Migrations
 {
     [DbContext(typeof(CheckedFileContext))]
-    [Migration("20220408120053_InitialCreate")]
+    [Migration("20220408155731_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -21,7 +21,7 @@ namespace IMApi.Migrations
 
             modelBuilder.Entity("Protronic.CeckedFileInfo.ConvertedFile", b =>
                 {
-                    b.Property<string>("FileName")
+                    b.Property<string>("WebURL")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ConversionType")
@@ -33,16 +33,16 @@ namespace IMApi.Migrations
                     b.Property<long>("FileLength")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("FileName")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("FileType")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("OriginalFileFileName")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("WebURL")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("FileName");
+                    b.HasKey("WebURL");
 
                     b.HasIndex("OriginalFileFileName");
 

@@ -30,17 +30,17 @@ namespace IMApi.Migrations
                 name: "ConvertedFiles",
                 columns: table => new
                 {
-                    FileName = table.Column<string>(type: "TEXT", nullable: false),
+                    WebURL = table.Column<string>(type: "TEXT", nullable: false),
+                    FileName = table.Column<string>(type: "TEXT", nullable: true),
                     ConversionType = table.Column<string>(type: "TEXT", nullable: true),
                     FileType = table.Column<string>(type: "TEXT", nullable: true),
                     FileCrc = table.Column<uint>(type: "INTEGER", nullable: false),
                     FileLength = table.Column<long>(type: "INTEGER", nullable: false),
-                    WebURL = table.Column<string>(type: "TEXT", nullable: true),
                     OriginalFileFileName = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ConvertedFiles", x => x.FileName);
+                    table.PrimaryKey("PK_ConvertedFiles", x => x.WebURL);
                     table.ForeignKey(
                         name: "FK_ConvertedFiles_OriginalFiles_OriginalFileFileName",
                         column: x => x.OriginalFileFileName,

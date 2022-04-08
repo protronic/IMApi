@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.EntityFrameworkCore;
 using ImageMagick;
 using Protronic.CeckedFileInfo;
 
@@ -53,7 +54,10 @@ public class IMController : Controller
         _ = originalFile.FileName ?? throw new NullReferenceException(nameof(originalFile.FileName));
         String currentConversion = "800x600";
         var fileName = Util.getFileName(originalFile);
-        var convertedFile = originalFile.convertedFiles.SingleOrDefault(c => c.FileName == fileName);
+        var convertedFile = db.Entry(originalFile).Collection(o => o.convertedFiles).Query()
+        .Where(c => c.ConversionType == currentConversion)
+        .SingleOrDefault();
+
         if (convertedFile == null)
         {
             var convertedFileInfo = ConvertImageFromOneFormatToAnother(fileName, currentConversion);
@@ -90,12 +94,17 @@ public class IMController : Controller
     {
         IFileInfo outfile;
         var srcFilePath = originalRepo.GetFileInfo(srcfile).PhysicalPath;
+        var conversionFilePath = Path.Combine(conversionName, Path.GetFileNameWithoutExtension(srcFilePath)) + "." + fileType;
+        outfile = convertedRepo.GetFileInfo(conversionFilePath);
+
         // Read first frame of gif image
         using (var image = new MagickImage(srcFilePath))
+        using (FileStream fs = System.IO.File.Create(outfile.PhysicalPath))
         {
             // Save frame as jpg
-            outfile = convertedRepo.GetFileInfo(Path.Combine(conversionName, Path.GetFileNameWithoutExtension(srcFilePath)) + "." + fileType);
-            image.Write(outfile.PhysicalPath);
+            image.Write(fs);
+            fs.Flush();
+            outfile = convertedRepo.GetFileInfo(conversionFilePath);
         }
 
         var settings = new MagickReadSettings();
