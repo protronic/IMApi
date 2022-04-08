@@ -57,11 +57,6 @@ public class WrongFilenameFormatException : ArgumentException
 
 static public class Util
 {
-
-    public static string GenerateConvertedFileName(string name, string conversionName, string fileType = "png")
-    {
-        return name + "_" + conversionName + "." + fileType;
-    }
     public static void GetInfoFromFileName(string originalFileName, out string name, out string artikelnummer, out string fileType)
     {
         var r = new Regex(@"(\d+)_?(\d+)?.(\w+)", RegexOptions.IgnoreCase);
@@ -116,5 +111,8 @@ static public class Util
             filetype = type;
             crc = Crc32.getUIntResult(bytes);
         }
+    }
+    public static string getFileName(OriginalFile f){
+        return f.FileName + "." + f.FileType;
     }
 }

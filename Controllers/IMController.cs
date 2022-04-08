@@ -52,14 +52,15 @@ public class IMController : Controller
     {
         _ = originalFile.FileName ?? throw new NullReferenceException(nameof(originalFile.FileName));
         String currentConversion = "800x600";
-        var convertedFileName = Util.GenerateConvertedFileName(originalFile.FileName, currentConversion);
-        var convertedFileInfo = this.convertedRepo.GetFileInfo(convertedFileName);
-        var convertedFile = originalFile.convertedFiles.SingleOrDefault(c => c.FileName == convertedFileName);
+        var fileName = Util.getFileName(originalFile);
+        var convertedFileInfo = this.convertedRepo.GetFileInfo(fileName);
+        var convertedFile = originalFile.convertedFiles.SingleOrDefault(c => c.FileName == fileName);
         if (convertedFile == null)
         {
-            ConvertImageFromOneFormatToAnother(convertedFileInfo, currentConversion);
+            ConvertImageFromOneFormatToAnother(fileName, currentConversion);
             Util.checkFile(convertedFileInfo, logger, out string name, out string num, out string type, out uint crc);
-            originalFile.convertedFiles.Add(new ConvertedFile{
+            originalFile.convertedFiles.Add(new ConvertedFile
+            {
                 FileName = name,
                 ConversionType = currentConversion,
                 FileType = type,
@@ -86,14 +87,13 @@ public class IMController : Controller
         return originalFile;
     }
 
-    private void ConvertImageFromOneFormatToAnother(IFileInfo file, String conversionName)
+    private void ConvertImageFromOneFormatToAnother(string srcfile, String conversionName, String fileType = "png")
     {
         // Read first frame of gif image
-        using (var image = new MagickImage(file.PhysicalPath))
+        using (var image = new MagickImage(originalRepo.GetFileInfo(srcfile).PhysicalPath))
         {
             // Save frame as jpg
-            var fn = Path.GetFileNameWithoutExtension(file.PhysicalPath);
-            var outfile = convertedRepo.GetFileInfo(fn + "_" + conversionName + ".png");
+            var outfile = convertedRepo.GetFileInfo(Path.Combine(conversionName, srcfile) + "." + fileType);
             image.Write(outfile.PhysicalPath);
         }
 
