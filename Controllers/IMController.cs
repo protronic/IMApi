@@ -28,10 +28,11 @@ public class IMController : Controller
 
         foreach (var f in this.originalRepo.GetDirectoryContents(""))
         {
-            if (GetFormatInformation(f) != null) {
+            if (GetFormatInformation(f) != null)
+            {
                 var originalFile = checkFileHasChanged(f);
                 processConverts(originalFile);
-            }    
+            }
         };
 
         db.SaveChanges();
@@ -49,11 +50,14 @@ public class IMController : Controller
             ?? MagickNET.GetFormatInformation(new MagickImageInfo(file.PhysicalPath).Format);
     }
 
-    private void processConverts(OriginalFile originalFile) {
-         _ = originalFile.FileName ?? throw new NullReferenceException(nameof(originalFile.FileName));
+    private void processConverts(OriginalFile originalFile)
+    {
+        _ = originalFile.FileName ?? throw new NullReferenceException(nameof(originalFile.FileName));
         String currentConversion = "800x600";
-        foreach (ConvertedFile cf in originalFile.convertedFiles) {
-            var cf = this.convertedRepo.GetFileInfo(db.GenerateConvertedFileName(originalFile.FileName, currentConversion));
+        foreach (ConvertedFile cf in originalFile.convertedFiles)
+        {
+            this.convertedRepo.GetFileInfo(Util.GenerateConvertedFileName(originalFile.FileName, currentConversion));
+
         }
 
     }
@@ -67,20 +71,19 @@ public class IMController : Controller
             foreach (byte b in bytes) hash += b.ToString("x2").ToLower();
 
             logger.LogInformation("CRC-32 is {0}", hash);
-            var originalFile = new OriginalFile
+            Util.GetInfoFromFileName(Path.GetFileName(file.PhysicalPath), out string name, out uint num, out string type);
+
+            var originalFile = db.OriginalFiles.SingleOrDefault(c => c.FileName == name) ?? new OriginalFile
             {
-                Artikelnummer = UInt32.Parse(Path.GetFileNameWithoutExtension(file.PhysicalPath)),
-                FileName = file.Name,
+                FileName = name,
+                Artikelnummer = num,
+                FileType = type,
                 FileLength = file.Length,
-                FileCrc = Crc32.getUIntResult(bytes)
+                FileCrc = Crc32.getUIntResult(bytes),
+                WebURL = new Uri("/img/orig/" + Path.GetFileName(file.PhysicalPath), UriKind.Relative)
             };
 
-            var changes = db.Update(originalFile);
-            if (changes.Property(f => f.FileCrc).IsModified)
-            {
-                logger.LogInformation("Orginal File has changed, drop converted files");
-                originalFile.convertedFiles.Clear();
-            }            
+            Util.AddOrUpdate(db, originalFile, logger);
             return originalFile;
         }
     }

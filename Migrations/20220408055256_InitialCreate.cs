@@ -14,15 +14,16 @@ namespace IMApi.Migrations
                 name: "OriginalFiles",
                 columns: table => new
                 {
-                    Artikelnummer = table.Column<uint>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    FileName = table.Column<string>(type: "TEXT", nullable: true),
+                    FileName = table.Column<string>(type: "TEXT", nullable: false),
+                    Artikelnummer = table.Column<uint>(type: "INTEGER", nullable: false),
+                    FileType = table.Column<string>(type: "TEXT", nullable: true),
                     FileCrc = table.Column<uint>(type: "INTEGER", nullable: false),
-                    FileLength = table.Column<long>(type: "INTEGER", nullable: false)
+                    FileLength = table.Column<long>(type: "INTEGER", nullable: false),
+                    WebURL = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_OriginalFiles", x => x.Artikelnummer);
+                    table.PrimaryKey("PK_OriginalFiles", x => x.FileName);
                 });
 
             migrationBuilder.CreateTable(
@@ -30,24 +31,26 @@ namespace IMApi.Migrations
                 columns: table => new
                 {
                     FileName = table.Column<string>(type: "TEXT", nullable: false),
+                    ConversionType = table.Column<string>(type: "TEXT", nullable: true),
                     FileCrc = table.Column<uint>(type: "INTEGER", nullable: false),
                     FileLength = table.Column<long>(type: "INTEGER", nullable: false),
-                    OriginalFileArtikelnummer = table.Column<uint>(type: "INTEGER", nullable: true)
+                    WebURL = table.Column<string>(type: "TEXT", nullable: true),
+                    OriginalFileFileName = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ConvertedFiles", x => x.FileName);
                     table.ForeignKey(
-                        name: "FK_ConvertedFiles_OriginalFiles_OriginalFileArtikelnummer",
-                        column: x => x.OriginalFileArtikelnummer,
+                        name: "FK_ConvertedFiles_OriginalFiles_OriginalFileFileName",
+                        column: x => x.OriginalFileFileName,
                         principalTable: "OriginalFiles",
-                        principalColumn: "Artikelnummer");
+                        principalColumn: "FileName");
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_ConvertedFiles_OriginalFileArtikelnummer",
+                name: "IX_ConvertedFiles_OriginalFileFileName",
                 table: "ConvertedFiles",
-                column: "OriginalFileArtikelnummer");
+                column: "OriginalFileFileName");
         }
 
         /// <inheritdoc />
