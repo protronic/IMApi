@@ -15,6 +15,7 @@ public class IMController : Controller
     private PhysicalFileProvider originalRepo;
     private PhysicalFileProvider convertedRepo;
     private CheckedFileContext db = new CheckedFileContext();
+    private List<OriginalFile> ofs;
 
     public IMController(ILogger<IMController> logger, IWebHostEnvironment env)
     {
@@ -23,8 +24,8 @@ public class IMController : Controller
         this.originalRepo = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "images", "orig"));
         this.convertedRepo = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "images", "out"));
 
-        logger.LogInformation($"Database path: {db.DbPath}.");
-
+        logger.LogInformation($"Database path: {db.DbPath}.");        
+        this.ofs = db.OriginalFiles.Include(o => o.convertedFiles).ToList();
         foreach (var f in this.originalRepo.GetDirectoryContents(""))
         {
             if (GetFormatInformation(f) != null)
@@ -33,14 +34,13 @@ public class IMController : Controller
                 processConverts(originalFile);
             }
         };
-
         db.SaveChanges();
     }
 
     [HttpGet(Name = "GetInfo")]
     public IEnumerable<OriginalFile> Get()
     {
-        return db.OriginalFiles.AsEnumerable();
+        return this.ofs;
     }
 
     private IMagickFormatInfo? GetFormatInformation(IFileInfo file)
@@ -54,9 +54,13 @@ public class IMController : Controller
         _ = originalFile.FileName ?? throw new NullReferenceException(nameof(originalFile.FileName));
         String currentConversion = "800x600";
         var fileName = Util.getFileName(originalFile);
-        var convertedFile = db.Entry(originalFile).Collection(o => o.convertedFiles).Query()
-        .Where(c => c.ConversionType == currentConversion)
-        .SingleOrDefault();
+        var convertedFile = originalFile.convertedFiles.Where(c => c.ConversionType == currentConversion).SingleOrDefault();
+
+        if (convertedFile != null && !convertedRepo.GetFileInfo(Util.getFileName(convertedFile)).Exists)
+        {
+            originalFile.convertedFiles.Remove(convertedFile);
+            convertedFile = null;
+        }
 
         if (convertedFile == null)
         {
@@ -77,7 +81,7 @@ public class IMController : Controller
     private OriginalFile checkFileHasChanged(IFileInfo file)
     {
         Util.checkFile(file, logger, out string name, out string num, out string type, out uint crc);
-        var originalFile = db.OriginalFiles.SingleOrDefault(c => c.FileName == name) ?? new OriginalFile
+        var originalFile = ofs.SingleOrDefault(c => c.FileName == name) ?? new OriginalFile
         {
             FileName = name,
             Artikelnummer = num,

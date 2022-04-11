@@ -115,4 +115,10 @@ static public class Util
     public static string getFileName(OriginalFile f){
         return f.FileName + "." + f.FileType;
     }
+
+    public static string getFileName(ConvertedFile f){
+        _ = f.FileName ?? throw new NullReferenceException(nameof(f.FileName));
+        _ = f.ConversionType ?? throw new NullReferenceException(nameof(f.ConversionType));
+        return Path.Combine(f.ConversionType, Path.GetFileNameWithoutExtension(f.FileName)) + "." + f.FileType;
+    }
 }
