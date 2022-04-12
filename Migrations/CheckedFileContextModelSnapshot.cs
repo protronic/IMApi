@@ -18,11 +18,17 @@ namespace IMApi.Migrations
 
             modelBuilder.Entity("Protronic.CeckedFileInfo.ConversionInfo", b =>
                 {
+                    b.Property<string>("ConveretedFilePath")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("ConversionName")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("FileType")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Label")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("OriginalFileFileName")
@@ -31,7 +37,7 @@ namespace IMApi.Migrations
                     b.Property<int?>("Type")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("ConversionName");
+                    b.HasKey("ConveretedFilePath");
 
                     b.HasIndex("OriginalFileFileName");
 
@@ -43,7 +49,7 @@ namespace IMApi.Migrations
                     b.Property<string>("WebURL")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ConversionName")
+                    b.Property<string>("ConversionConveretedFilePath")
                         .HasColumnType("TEXT");
 
                     b.Property<uint>("FileCrc")
@@ -63,7 +69,7 @@ namespace IMApi.Migrations
 
                     b.HasKey("WebURL");
 
-                    b.HasIndex("ConversionName");
+                    b.HasIndex("ConversionConveretedFilePath");
 
                     b.HasIndex("OriginalFileFileName");
 
@@ -109,7 +115,7 @@ namespace IMApi.Migrations
                 {
                     b.HasOne("Protronic.CeckedFileInfo.ConversionInfo", "Conversion")
                         .WithMany()
-                        .HasForeignKey("ConversionName");
+                        .HasForeignKey("ConversionConveretedFilePath");
 
                     b.HasOne("Protronic.CeckedFileInfo.OriginalFile", null)
                         .WithMany("convertedFiles")

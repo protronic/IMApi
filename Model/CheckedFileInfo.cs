@@ -61,7 +61,7 @@ public record ConversionInfo
     public string? ConversionName { get; init; }
     public string FileType { get; init; } = "png";
     public ConversionType? Type { get; init; }    
-    public List<string> labels { get; } = new();
+    public string? Label { get; init; }
 }
 
 public record ConvertedFile
@@ -86,7 +86,8 @@ static public class Util
     public static ConversionInfo[] DEFAULT_CONVERSIONS = { new ConversionInfo
         {
             ConversionName = "800x600",
-            Type = ConversionType._800x600
+            Type = ConversionType._800x600,
+            Label = string.Empty
         }
     };
 

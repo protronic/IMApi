@@ -31,14 +31,16 @@ namespace IMApi.Migrations
                 name: "Conversions",
                 columns: table => new
                 {
-                    ConversionName = table.Column<string>(type: "TEXT", nullable: false),
+                    ConveretedFilePath = table.Column<string>(type: "TEXT", nullable: false),
+                    ConversionName = table.Column<string>(type: "TEXT", nullable: true),
                     FileType = table.Column<string>(type: "TEXT", nullable: false),
                     Type = table.Column<int>(type: "INTEGER", nullable: true),
+                    Label = table.Column<string>(type: "TEXT", nullable: true),
                     OriginalFileFileName = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Conversions", x => x.ConversionName);
+                    table.PrimaryKey("PK_Conversions", x => x.ConveretedFilePath);
                     table.ForeignKey(
                         name: "FK_Conversions_OriginalFiles_OriginalFileFileName",
                         column: x => x.OriginalFileFileName,
@@ -52,7 +54,7 @@ namespace IMApi.Migrations
                 {
                     WebURL = table.Column<string>(type: "TEXT", nullable: false),
                     FileName = table.Column<string>(type: "TEXT", nullable: true),
-                    ConversionName = table.Column<string>(type: "TEXT", nullable: true),
+                    ConversionConveretedFilePath = table.Column<string>(type: "TEXT", nullable: true),
                     FileType = table.Column<string>(type: "TEXT", nullable: true),
                     FileCrc = table.Column<uint>(type: "INTEGER", nullable: false),
                     FileLength = table.Column<long>(type: "INTEGER", nullable: false),
@@ -62,10 +64,10 @@ namespace IMApi.Migrations
                 {
                     table.PrimaryKey("PK_ConvertedFiles", x => x.WebURL);
                     table.ForeignKey(
-                        name: "FK_ConvertedFiles_Conversions_ConversionName",
-                        column: x => x.ConversionName,
+                        name: "FK_ConvertedFiles_Conversions_ConversionConveretedFilePath",
+                        column: x => x.ConversionConveretedFilePath,
                         principalTable: "Conversions",
-                        principalColumn: "ConversionName");
+                        principalColumn: "ConveretedFilePath");
                     table.ForeignKey(
                         name: "FK_ConvertedFiles_OriginalFiles_OriginalFileFileName",
                         column: x => x.OriginalFileFileName,
@@ -79,9 +81,9 @@ namespace IMApi.Migrations
                 column: "OriginalFileFileName");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ConvertedFiles_ConversionName",
+                name: "IX_ConvertedFiles_ConversionConveretedFilePath",
                 table: "ConvertedFiles",
-                column: "ConversionName");
+                column: "ConversionConveretedFilePath");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ConvertedFiles_OriginalFileFileName",

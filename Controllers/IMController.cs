@@ -85,6 +85,14 @@ public class IMController : Controller
     private OriginalFile checkFileHasChanged(IFileInfo file)
     {
         Util.checkFile(file, logger, out string name, out string num, out Lang lang, out string type, out uint crc);
+        var conversionsList = new List<ConversionInfo>(Util.DEFAULT_CONVERSIONS).Select(ci => new ConversionInfo
+        {
+            ConveretedFilePath = ci.ConversionName + "/" + name + "." + ci.FileType,
+            ConversionName = ci.ConversionName,
+            FileType = ci.FileType,
+            Type = ci.Type,
+            Label = ci.Label
+        }).ToList();
         var originalFile = ofs.SingleOrDefault(c => c.FileName == name) ?? new OriginalFile
         {
             FileName = name,
@@ -92,7 +100,7 @@ public class IMController : Controller
             FileType = type,
             FileLength = file.Length,
             FileCrc = crc,
-            conversions = new List<ConversionInfo>(Util.DEFAULT_CONVERSIONS),
+            conversions = conversionsList,
             WebURL = new Uri("/img/orig/" + Path.GetFileName(file.PhysicalPath), UriKind.Relative)
         };
         Util.AddOrUpdate(db, originalFile, logger);
