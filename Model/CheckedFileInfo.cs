@@ -57,6 +57,7 @@ public record OriginalFile
 public record ConversionInfo
 {
     [Key]
+    public string? ConveretedFilePath { get; init; }
     public string? ConversionName { get; init; }
     public string FileType { get; init; } = "png";
     public ConversionType? Type { get; init; }    
