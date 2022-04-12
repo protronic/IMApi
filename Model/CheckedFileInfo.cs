@@ -10,6 +10,8 @@ public class CheckedFileContext : DbContext
 {
     public DbSet<OriginalFile> OriginalFiles { get; set; }
     public DbSet<ConvertedFile> ConvertedFiles { get; set; }
+    public DbSet<ConversionInfo> Conversions { get; set; }
+
 
     public string DbPath { get; }
 
@@ -19,6 +21,7 @@ public class CheckedFileContext : DbContext
         DbPath = System.IO.Path.Join("./wwwroot/", "CeckedFileInfo.db");
         _ = this.OriginalFiles ?? throw new NullReferenceException(nameof(OriginalFiles));
         _ = this.ConvertedFiles ?? throw new NullReferenceException(nameof(ConvertedFiles));
+        _ = this.Conversions ?? throw new NullReferenceException(nameof(Conversions));
     }
 
     // The following configures EF to create a Sqlite database file in the
@@ -27,16 +30,37 @@ public class CheckedFileContext : DbContext
         => options.UseSqlite($"Data Source={DbPath}");
 }
 
+public enum ConversionType
+{
+    _800x600
+}
+
+public enum Lang
+{
+    DE,EN
+}
+
 public record OriginalFile
 {
     [Key]
     public string? FileName { get; init; }
-    public string? Artikelnummer { get; init; }
+    public string? Artikelnummer { get; init; }    
+    public Lang lang { get; init; } = Lang.DE;
     public string? FileType { get; set; }
     public uint FileCrc { get; init; }
     public long FileLength { get; init; }
     public Uri? WebURL { get; init; }
+    public List<ConversionInfo> conversions { get; init; } = new();
     public List<ConvertedFile> convertedFiles { get; } = new();
+}
+
+public record ConversionInfo
+{
+    [Key]
+    public string? ConversionName { get; init; }
+    public string FileType { get; init; } = "png";
+    public ConversionType? Type { get; init; }    
+    public List<string> labels { get; } = new();
 }
 
 public record ConvertedFile
@@ -44,7 +68,7 @@ public record ConvertedFile
     [Key]
     public Uri? WebURL { get; init; }
     public string? FileName { get; init; }
-    public string? ConversionType { get; init; }
+    public ConversionInfo? Conversion { get; init; }
     public string? FileType { get; set; }
     public uint FileCrc { get; init; }
     public long FileLength { get; init; }
@@ -57,19 +81,30 @@ public class WrongFilenameFormatException : ArgumentException
 
 static public class Util
 {
-    public static void GetInfoFromFileName(string originalFileName, out string name, out string artikelnummer, out string fileType)
+
+    public static ConversionInfo[] DEFAULT_CONVERSIONS = { new ConversionInfo
+        {
+            ConversionName = "800x600",
+            Type = ConversionType._800x600
+        }
+    };
+
+    public static void GetInfoFromFileName(string originalFileName, out string name, out string artikelnummer, out Lang lang, out string fileType)
     {
-        var r = new Regex(@"(\d+)_?(\d+)?.(\w+)", RegexOptions.IgnoreCase);
+        var r = new Regex(@"(\d+)(_\w+)?(_\d+)?.(\w+)", RegexOptions.IgnoreCase);
         var match = r.Match(originalFileName);
+        lang = Lang.DE;
         if (match.Success)
         {
             artikelnummer = match.Groups[1].Value;
-            name = match.Groups[1].Value + match.Groups[2].Value;
-            fileType = match.Groups[3].Value;
+            lang = match.Groups[2].Success ? Enum.Parse<Lang>(match.Groups[2].Value.ToUpper()) : Lang.DE;
+            name = match.Groups[1].Value + match.Groups[2].Value + match.Groups[3].Value;
+            fileType = match.Groups[4].Value;
         }
         else
             throw new WrongFilenameFormatException(originalFileName);
     }
+
     public static void AddOrUpdate(this DbContext ctx, object entity, ILogger logger)
     {
         var entry = ctx.Entry(entity);
@@ -95,7 +130,8 @@ static public class Util
         }
     }
 
-    public static void checkFile(IFileInfo file, ILogger logger, out string filename, out string artikelnummer, out string filetype, out uint crc)
+    public static void checkFile(IFileInfo file, ILogger logger, out string filename, 
+        out string artikelnummer, out Lang language, out string filetype, out uint crc)
     {
         Crc32 crc32 = new Crc32();
         String hash = String.Empty;
@@ -105,20 +141,24 @@ static public class Util
             foreach (byte b in bytes) hash += b.ToString("x2").ToLower();
 
             logger.LogInformation("CRC-32 is {0}", hash);
-            Util.GetInfoFromFileName(Path.GetFileName(file.PhysicalPath), out string name, out string num, out string type);
+            Util.GetInfoFromFileName(Path.GetFileName(file.PhysicalPath), out string name, out string num, out Lang lang, out string type);
             filename = name;
-            artikelnummer =num;
+            artikelnummer = num;
             filetype = type;
+            language = lang;
             crc = Crc32.getUIntResult(bytes);
         }
     }
-    public static string getFileName(OriginalFile f){
+    public static string getFileName(OriginalFile f)
+    {
         return f.FileName + "." + f.FileType;
     }
 
-    public static string getFileName(ConvertedFile f){
+    public static string getFileName(ConvertedFile f)
+    {
         _ = f.FileName ?? throw new NullReferenceException(nameof(f.FileName));
-        _ = f.ConversionType ?? throw new NullReferenceException(nameof(f.ConversionType));
-        return Path.Combine(f.ConversionType, Path.GetFileNameWithoutExtension(f.FileName)) + "." + f.FileType;
+        _ = f.Conversion ?? throw new NullReferenceException(nameof(f.Conversion));
+        _ = f.Conversion.ConversionName ?? throw new NullReferenceException(nameof(f.Conversion.ConversionName));
+        return Path.Combine(f.Conversion.ConversionName, Path.GetFileNameWithoutExtension(f.FileName)) + "." + f.FileType;
     }
 }

@@ -24,8 +24,8 @@ public class IMController : Controller
         this.originalRepo = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "images", "orig"));
         this.convertedRepo = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "images", "out"));
 
-        logger.LogInformation($"Database path: {db.DbPath}.");        
-        this.ofs = db.OriginalFiles.Include(o => o.convertedFiles).ToList();
+        logger.LogInformation($"Database path: {db.DbPath}.");
+        this.ofs = db.OriginalFiles.Include(o => o.convertedFiles).Include(o => o.conversions).ToList();
         foreach (var f in this.originalRepo.GetDirectoryContents(""))
         {
             if (GetFormatInformation(f) != null)
@@ -52,35 +52,39 @@ public class IMController : Controller
     private void processConverts(OriginalFile originalFile)
     {
         _ = originalFile.FileName ?? throw new NullReferenceException(nameof(originalFile.FileName));
-        String currentConversion = "800x600";
+
         var fileName = Util.getFileName(originalFile);
-        var convertedFile = originalFile.convertedFiles.Where(c => c.ConversionType == currentConversion).SingleOrDefault();
 
-        if (convertedFile != null && !convertedRepo.GetFileInfo(Util.getFileName(convertedFile)).Exists)
+        foreach (ConversionInfo con in originalFile.conversions)
         {
-            originalFile.convertedFiles.Remove(convertedFile);
-            convertedFile = null;
-        }
-
-        if (convertedFile == null)
-        {
-            var convertedFileInfo = ConvertImageFromOneFormatToAnother(fileName, currentConversion);
-            Util.checkFile(convertedFileInfo, logger, out string name, out string num, out string type, out uint crc);
-            originalFile.convertedFiles.Add(new ConvertedFile
+            var convertedFile = originalFile.convertedFiles.Where(c => con.Equals(c.Conversion)).SingleOrDefault();
+            if (convertedFile != null && !convertedRepo.GetFileInfo(Util.getFileName(convertedFile)).Exists)
             {
-                FileName = name,
-                ConversionType = currentConversion,
-                FileType = type,
-                FileCrc = crc,
-                FileLength = convertedFileInfo.Length,
-                WebURL = new Uri("/img/out/" + currentConversion + "/" + fileName, UriKind.Relative)
-            });
+                originalFile.convertedFiles.Remove(convertedFile);
+                convertedFile = null;
+            }
+
+            if (convertedFile == null)
+            {
+                var convertedFileInfo = ConvertImageFromOneFormatToAnother(fileName, con);
+                Util.checkFile(convertedFileInfo, logger, out string name, out string num, out Lang lang, out string type, out uint crc);
+                originalFile.convertedFiles.Add(new ConvertedFile
+                {
+                    FileName = name,
+                    Conversion = con,
+                    FileType = type,
+                    FileCrc = crc,
+                    FileLength = convertedFileInfo.Length,
+                    WebURL = new Uri("/img/out/" + con.ConversionName + "/" + fileName, UriKind.Relative)
+                });
+            }
+
         }
     }
 
     private OriginalFile checkFileHasChanged(IFileInfo file)
     {
-        Util.checkFile(file, logger, out string name, out string num, out string type, out uint crc);
+        Util.checkFile(file, logger, out string name, out string num, out Lang lang, out string type, out uint crc);
         var originalFile = ofs.SingleOrDefault(c => c.FileName == name) ?? new OriginalFile
         {
             FileName = name,
@@ -88,17 +92,19 @@ public class IMController : Controller
             FileType = type,
             FileLength = file.Length,
             FileCrc = crc,
+            conversions = new List<ConversionInfo>(Util.DEFAULT_CONVERSIONS),
             WebURL = new Uri("/img/orig/" + Path.GetFileName(file.PhysicalPath), UriKind.Relative)
         };
         Util.AddOrUpdate(db, originalFile, logger);
         return originalFile;
     }
 
-    private IFileInfo ConvertImageFromOneFormatToAnother(string srcfile, String conversionName, String fileType = "png")
+    private IFileInfo ConvertImageFromOneFormatToAnother(string srcfile, ConversionInfo con)
     {
         IFileInfo outfile;
+        _ = con.ConversionName ?? throw new NullReferenceException(nameof(con.ConversionName));
         var srcFilePath = originalRepo.GetFileInfo(srcfile).PhysicalPath;
-        var conversionFilePath = Path.Combine(conversionName, Path.GetFileNameWithoutExtension(srcFilePath)) + "." + fileType;
+        var conversionFilePath = Path.Combine(con.ConversionName, Path.GetFileNameWithoutExtension(srcFilePath)) + "." + con.FileType;
         outfile = convertedRepo.GetFileInfo(conversionFilePath);
 
         // Read first frame of gif image

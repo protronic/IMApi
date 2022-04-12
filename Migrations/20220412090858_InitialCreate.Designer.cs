@@ -10,7 +10,7 @@ using Protronic.CeckedFileInfo;
 namespace IMApi.Migrations
 {
     [DbContext(typeof(CheckedFileContext))]
-    [Migration("20220408155731_InitialCreate")]
+    [Migration("20220412090858_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -19,12 +19,33 @@ namespace IMApi.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.0-preview.2.22153.1");
 
+            modelBuilder.Entity("Protronic.CeckedFileInfo.ConversionInfo", b =>
+                {
+                    b.Property<string>("ConversionName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FileType")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OriginalFileFileName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("Type")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("ConversionName");
+
+                    b.HasIndex("OriginalFileFileName");
+
+                    b.ToTable("Conversions");
+                });
+
             modelBuilder.Entity("Protronic.CeckedFileInfo.ConvertedFile", b =>
                 {
                     b.Property<string>("WebURL")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ConversionType")
+                    b.Property<string>("ConversionName")
                         .HasColumnType("TEXT");
 
                     b.Property<uint>("FileCrc")
@@ -43,6 +64,8 @@ namespace IMApi.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("WebURL");
+
+                    b.HasIndex("ConversionName");
 
                     b.HasIndex("OriginalFileFileName");
 
@@ -69,20 +92,38 @@ namespace IMApi.Migrations
                     b.Property<string>("WebURL")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("lang")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("FileName");
 
                     b.ToTable("OriginalFiles");
                 });
 
+            modelBuilder.Entity("Protronic.CeckedFileInfo.ConversionInfo", b =>
+                {
+                    b.HasOne("Protronic.CeckedFileInfo.OriginalFile", null)
+                        .WithMany("conversions")
+                        .HasForeignKey("OriginalFileFileName");
+                });
+
             modelBuilder.Entity("Protronic.CeckedFileInfo.ConvertedFile", b =>
                 {
+                    b.HasOne("Protronic.CeckedFileInfo.ConversionInfo", "Conversion")
+                        .WithMany()
+                        .HasForeignKey("ConversionName");
+
                     b.HasOne("Protronic.CeckedFileInfo.OriginalFile", null)
                         .WithMany("convertedFiles")
                         .HasForeignKey("OriginalFileFileName");
+
+                    b.Navigation("Conversion");
                 });
 
             modelBuilder.Entity("Protronic.CeckedFileInfo.OriginalFile", b =>
                 {
+                    b.Navigation("conversions");
+
                     b.Navigation("convertedFiles");
                 });
 #pragma warning restore 612, 618
