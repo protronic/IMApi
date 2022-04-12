@@ -22,6 +22,7 @@ namespace IMApi.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("FileType")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("OriginalFileFileName")
@@ -89,7 +90,7 @@ namespace IMApi.Migrations
                     b.Property<string>("WebURL")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("lang")
+                    b.Property<int>("lang")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("FileName");

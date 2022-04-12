@@ -91,15 +91,16 @@ static public class Util
 
     public static void GetInfoFromFileName(string originalFileName, out string name, out string artikelnummer, out Lang lang, out string fileType)
     {
-        var r = new Regex(@"(\d+)(_\w+)?(_\d+)?.(\w+)", RegexOptions.IgnoreCase);
+        var r = new Regex(@"((?'num'\d+)(_(?'index'[\d]+)|_(?'lang'[a-zA-Z]+))*(\.(?i)(?'ext'jpg|png|gif|bmp))$)", RegexOptions.IgnoreCase);
         var match = r.Match(originalFileName);
-        lang = Lang.DE;
         if (match.Success)
         {
-            artikelnummer = match.Groups[1].Value;
-            lang = match.Groups[2].Success ? Enum.Parse<Lang>(match.Groups[2].Value.ToUpper()) : Lang.DE;
-            name = match.Groups[1].Value + match.Groups[2].Value + match.Groups[3].Value;
-            fileType = match.Groups[4].Value;
+            artikelnummer = match.Groups["num"].Value;
+            lang = match.Groups["lang"].Success ? Enum.Parse<Lang>(match.Groups["lang"].Value.ToUpper()) : Lang.DE;
+            name = match.Groups["num"].Value;
+            name += match.Groups["lang"].Success ? "_" + match.Groups["lang"].Value : string.Empty;
+            name += match.Groups["index"].Success ? "_" + match.Groups["index"].Value : string.Empty;
+            fileType = match.Groups["ext"].Value;
         }
         else
             throw new WrongFilenameFormatException(originalFileName);
