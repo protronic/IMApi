@@ -91,7 +91,6 @@ public class WrongFilenameFormatException : ArgumentException
 
 static public class Util
 {
-
     public static ConversionInfo[] DEFAULT_CONVERSIONS = {
         new ConversionInfo {
             ConversionName = "web",
