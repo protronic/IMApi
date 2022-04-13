@@ -1,0 +1,1 @@
+### IMApi Rest Api for batch processing images with Magick.NET
