@@ -112,13 +112,30 @@ public class IMController : Controller
         // Read first frame of gif image
         using (var image = new MagickImage(srcFilePath))
         using (FileStream fs = System.IO.File.Create(outfile.PhysicalPath))
+        using (MagickImageCollection images = new MagickImageCollection())
         {
             Enum.TryParse<MagickFormat>(con.FileType, true, out MagickFormat format);
-            if(con.Width > 0 && con.Height > 0) image.Scale(con.Width, con.Height);
-            // Save
-            image.Write(fs, format);
-            fs.Flush();
-            outfile = convertedRepo.GetFileInfo(conversionFilePath);
+
+            image.Strip();
+            image.Quality = 100;
+            if (con.Width > 0 && con.Height > 0) image.Resize(con.Width, con.Height);
+
+            var shadow = new MagickImage(image.Clone());
+            shadow.Quality = 100;
+            shadow.BackgroundColor = new MagickColor(con.BackgroundColor);
+
+            shadow.Shadow(0, 0, 10, (Percentage)90, MagickColors.Black); // -background black -shadow 100x10+0+0
+            shadow.BackgroundColor = new MagickColor(con.BackgroundColor); // -background none
+                                                                           // +swap changes the order of the images we just add them in a different order
+            images.Add(shadow);
+            images.Add(image.Clone());
+            using (var merged = images.Merge()) // -layers merge
+            {
+                // Save
+                merged.Write(fs, format);
+                fs.Flush();
+                outfile = convertedRepo.GetFileInfo(conversionFilePath);
+            }
         }
         return outfile;
     }
