@@ -21,6 +21,10 @@ namespace IMApi.Migrations
                     b.Property<string>("ConveretedFilePath")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("BackgroundColor")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("ConversionName")
                         .HasColumnType("TEXT");
 

@@ -38,6 +38,7 @@ namespace IMApi.Migrations
                     Label = table.Column<string>(type: "TEXT", nullable: true),
                     Width = table.Column<int>(type: "INTEGER", nullable: false),
                     Height = table.Column<int>(type: "INTEGER", nullable: false),
+                    BackgroundColor = table.Column<string>(type: "TEXT", nullable: false),
                     OriginalFileFileName = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>

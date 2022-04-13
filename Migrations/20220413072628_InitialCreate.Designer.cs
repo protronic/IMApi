@@ -10,7 +10,7 @@ using Protronic.CeckedFileInfo;
 namespace IMApi.Migrations
 {
     [DbContext(typeof(CheckedFileContext))]
-    [Migration("20220413052750_InitialCreate")]
+    [Migration("20220413072628_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -22,6 +22,10 @@ namespace IMApi.Migrations
             modelBuilder.Entity("Protronic.CeckedFileInfo.ConversionInfo", b =>
                 {
                     b.Property<string>("ConveretedFilePath")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BackgroundColor")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ConversionName")

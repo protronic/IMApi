@@ -64,6 +64,7 @@ public record ConversionInfo
     public string? Label { get; init; }
     public int Width { get; init; }
     public int Height { get; init; }
+    public string BackgroundColor {get; init;} = "#00000000"; // MagickColor.Transparent
 
     public ConversionInfo copy(string newName) {
         var cp = (ConversionInfo)this.MemberwiseClone();
@@ -97,14 +98,16 @@ static public class Util
             Type = ConversionType.web,
             Label = string.Empty,
             Width = 500,
-            Height = 500
+            Height = 500,
+            BackgroundColor = "#FFFFFFFF",
         },
         new ConversionInfo {
             ConversionName = "thumb",
             Type = ConversionType.thumb,
             Label = string.Empty,
             Width = 100,
-            Height = 100
+            Height = 100,
+            BackgroundColor = "#FFFFFFFF",
         },
         new ConversionInfo {
             ConversionName = "100x100",
