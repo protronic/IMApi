@@ -43,6 +43,17 @@ public class IMController : Controller
         return this.ofs;
     }
 
+    [HttpDelete(Name = "DeleteConvertedFiles")]
+    public void DeleteConvertedFiles()
+    {
+        var rows = from o in db.ConvertedFiles select o;
+        foreach (var row in rows)
+        {
+            db.ConvertedFiles.Remove(row);
+        }
+        db.SaveChanges();
+    }
+
     private IMagickFormatInfo? GetFormatInformation(IFileInfo file)
     {
         return MagickNET.GetFormatInformation(file.PhysicalPath)
@@ -122,11 +133,20 @@ public class IMController : Controller
 
             var shadow = new MagickImage(image.Clone());
             shadow.Quality = 100;
-            shadow.BackgroundColor = new MagickColor(con.BackgroundColor);
-
-            shadow.Shadow(0, 0, 10, (Percentage)90, MagickColors.Black); // -background black -shadow 100x10+0+0
-            shadow.BackgroundColor = new MagickColor(con.BackgroundColor); // -background none
+            shadow.Shadow(0, 0, 10, (Percentage)90, MagickColors.Black);   // -background black -shadow 100x10+0+0
+            shadow.BackgroundColor = new MagickColor(con.BackgroundColor); // -background from db
                                                                            // +swap changes the order of the images we just add them in a different order
+            // -alpha set
+            image.Alpha(AlphaOption.Set);
+            // -virtual-pixel transparent
+            image.VirtualPixelMethod = VirtualPixelMethod.Transparent;
+            // -channel A means that the next operations should only change the alpha channel
+            // - blur reletive the imgage width
+            image.Blur(0, 6.0 * image.Width / 2000.0, Channels.Alpha);
+            // -level 50%,100%
+            image.Level(new Percentage(50), new Percentage(100), Channels.Alpha);
+            // +channel cancels only allow operations on the alpha channel.
+
             images.Add(shadow);
             images.Add(image.Clone());
             using (var merged = images.Merge()) // -layers merge
