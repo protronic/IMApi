@@ -28,6 +28,9 @@ namespace IMApi.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("Height")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Label")
                         .HasColumnType("TEXT");
 
@@ -35,6 +38,9 @@ namespace IMApi.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("Type")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Width")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("ConveretedFilePath");

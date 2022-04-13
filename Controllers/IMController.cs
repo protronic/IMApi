@@ -78,21 +78,13 @@ public class IMController : Controller
                     WebURL = new Uri("/img/out/" + con.ConversionName + "/" + fileName, UriKind.Relative)
                 });
             }
-
         }
     }
 
     private OriginalFile checkFileHasChanged(IFileInfo file)
     {
         Util.checkFile(file, logger, out string name, out string num, out Lang lang, out string type, out uint crc);
-        var conversionsList = new List<ConversionInfo>(Util.DEFAULT_CONVERSIONS).Select(ci => new ConversionInfo
-        {
-            ConveretedFilePath = ci.ConversionName + "/" + name + "." + ci.FileType,
-            ConversionName = ci.ConversionName,
-            FileType = ci.FileType,
-            Type = ci.Type,
-            Label = ci.Label
-        }).ToList();
+        var conversionsList = new List<ConversionInfo>(Util.DEFAULT_CONVERSIONS).Select(ci => ci.copy(name)).ToList();
         var originalFile = ofs.SingleOrDefault(c => c.FileName == name) ?? new OriginalFile
         {
             FileName = name,
@@ -114,33 +106,19 @@ public class IMController : Controller
         var srcFilePath = originalRepo.GetFileInfo(srcfile).PhysicalPath;
         var conversionFilePath = Path.Combine(con.ConversionName, Path.GetFileNameWithoutExtension(srcFilePath)) + "." + con.FileType;
         outfile = convertedRepo.GetFileInfo(conversionFilePath);
+        var dir = Path.GetDirectoryName(outfile.PhysicalPath);
+        if (dir != null) Directory.CreateDirectory(dir);
 
         // Read first frame of gif image
         using (var image = new MagickImage(srcFilePath))
         using (FileStream fs = System.IO.File.Create(outfile.PhysicalPath))
         {
-            // Save frame as jpg
-            image.Write(fs);
+            Enum.TryParse<MagickFormat>(con.FileType, true, out MagickFormat format);
+            if(con.Width > 0 && con.Height > 0) image.Scale(con.Width, con.Height);
+            // Save
+            image.Write(fs, format);
             fs.Flush();
             outfile = convertedRepo.GetFileInfo(conversionFilePath);
-        }
-
-        var settings = new MagickReadSettings();
-        // Tells the xc: reader the image to create should be 800x600
-        settings.Width = 800;
-        settings.Height = 600;
-
-        using (var memStream = new MemoryStream())
-        {
-            // Create image that is completely purple and 800x600
-            using (var image = new MagickImage("xc:purple", settings))
-            {
-                // Sets the output format to png
-                image.Format = MagickFormat.Png;
-
-                // Write the image to the memorystream
-                image.Write(memStream);
-            }
         }
         return outfile;
     }

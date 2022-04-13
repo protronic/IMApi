@@ -32,19 +32,19 @@ public class CheckedFileContext : DbContext
 
 public enum ConversionType
 {
-    _800x600
+    web, thumb, _100x100, _200x200, _2000x2000, max
 }
 
 public enum Lang
 {
-    DE,EN
+    DE, EN
 }
 
 public record OriginalFile
 {
     [Key]
     public string? FileName { get; init; }
-    public string? Artikelnummer { get; init; }    
+    public string? Artikelnummer { get; init; }
     public Lang lang { get; init; } = Lang.DE;
     public string? FileType { get; set; }
     public uint FileCrc { get; init; }
@@ -57,11 +57,19 @@ public record OriginalFile
 public record ConversionInfo
 {
     [Key]
-    public string? ConveretedFilePath { get; init; }
+    public string? ConveretedFilePath { get; set; }
     public string? ConversionName { get; init; }
     public string FileType { get; init; } = "png";
-    public ConversionType? Type { get; init; }    
+    public ConversionType? Type { get; init; }
     public string? Label { get; init; }
+    public int Width { get; init; }
+    public int Height { get; init; }
+
+    public ConversionInfo copy(string newName) {
+        var cp = (ConversionInfo)this.MemberwiseClone();
+        cp.ConveretedFilePath = cp.ConversionName + "/" + newName + "." + cp.FileType;
+        return cp;
+    }
 }
 
 public record ConvertedFile
@@ -83,11 +91,48 @@ public class WrongFilenameFormatException : ArgumentException
 static public class Util
 {
 
-    public static ConversionInfo[] DEFAULT_CONVERSIONS = { new ConversionInfo
-        {
-            ConversionName = "800x600",
-            Type = ConversionType._800x600,
-            Label = string.Empty
+    public static ConversionInfo[] DEFAULT_CONVERSIONS = {
+        new ConversionInfo {
+            ConversionName = "web",
+            Type = ConversionType.web,
+            Label = string.Empty,
+            Width = 500,
+            Height = 500
+        },
+        new ConversionInfo {
+            ConversionName = "thumb",
+            Type = ConversionType.thumb,
+            Label = string.Empty,
+            Width = 100,
+            Height = 100
+        },
+        new ConversionInfo {
+            ConversionName = "100x100",
+            Type = ConversionType._100x100,
+            Label = string.Empty,
+            Width = 100,
+            Height = 100
+        },
+        new ConversionInfo {
+            ConversionName = "200x200",
+            Type = ConversionType._200x200,
+            Label = string.Empty,
+            Width = 200,
+            Height = 200
+        },
+        new ConversionInfo {
+            ConversionName = "2000x2000",
+            Type = ConversionType._2000x2000,
+            Label = string.Empty,
+            Width = 2000,
+            Height = 2000
+        },
+        new ConversionInfo {
+            ConversionName = "max",
+            Type = ConversionType.max,
+            Label = string.Empty,
+            Width = -1,
+            Height = -1
         }
     };
 
@@ -133,7 +178,7 @@ static public class Util
         }
     }
 
-    public static void checkFile(IFileInfo file, ILogger logger, out string filename, 
+    public static void checkFile(IFileInfo file, ILogger logger, out string filename,
         out string artikelnummer, out Lang language, out string filetype, out uint crc)
     {
         Crc32 crc32 = new Crc32();
