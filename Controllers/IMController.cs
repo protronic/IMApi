@@ -25,22 +25,14 @@ public class IMController : Controller
         this.convertedRepo = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "images", "out"));
 
         logger.LogInformation($"Database path: {db.DbPath}.");
-        this.ofs = db.OriginalFiles.Include(o => o.convertedFiles).Include(o => o.conversions).ToList();
-        foreach (var f in this.originalRepo.GetDirectoryContents(""))
-        {
-            if (GetFormatInformation(f) != null)
-            {
-                var originalFile = checkFileHasChanged(f);
-                processConverts(originalFile);
-            }
-        };
-        db.SaveChanges();
+       
+        this.ofs = db.OriginalFiles.Include(o => o.convertedFiles).Include(o => o.conversions).ToList();        
     }
 
     [HttpGet(Name = "GetInfo")]
     public IEnumerable<OriginalFile> Get()
     {
-        return this.ofs;
+        return this.ofs = db.OriginalFiles.Include(o => o.convertedFiles).Include(o => o.conversions).ToList();
     }
 
     [HttpDelete(Name = "DeleteConvertedFiles")]
@@ -51,6 +43,20 @@ public class IMController : Controller
         {
             db.ConvertedFiles.Remove(row);
         }
+        db.SaveChanges();
+    }
+
+    [HttpPost(Name = "PostProcessImages")]
+    public void ProcessImages()
+    {
+        foreach (var f in this.originalRepo.GetDirectoryContents(""))
+        {
+            if (GetFormatInformation(f) != null)
+            {
+                var originalFile = checkFileHasChanged(f);
+                processConverts(originalFile);
+            }
+        };
         db.SaveChanges();
     }
 

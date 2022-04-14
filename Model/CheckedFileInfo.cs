@@ -109,6 +109,14 @@ static public class Util
             BackgroundColor = "#FFFFFFFF",
         },
         new ConversionInfo {
+            ConversionName = "bunt",
+            Type = ConversionType.thumb,
+            Label = string.Empty,
+            Width = 100,
+            Height = 100,
+            BackgroundColor = "#12345678",
+        },
+        new ConversionInfo {
             ConversionName = "100x100",
             Type = ConversionType._100x100,
             Label = string.Empty,
