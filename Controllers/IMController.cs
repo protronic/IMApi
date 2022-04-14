@@ -139,7 +139,7 @@ public class IMController : Controller
 
             var shadow = new MagickImage(image.Clone());
             shadow.Quality = 100;
-            shadow.Shadow(0, 0, 10, (Percentage)90, MagickColors.Black);   // -background black -shadow 100x10+0+0
+            shadow.Shadow(0, 0, 40.0 * image.Width / 2000.0, (Percentage)90, MagickColors.Black);   // -background black -shadow 100x10+0+0
             shadow.BackgroundColor = new MagickColor(con.BackgroundColor); // -background from db
                                                                            // +swap changes the order of the images we just add them in a different order
             // -alpha set
