@@ -25,14 +25,14 @@ public class IMController : Controller
         this.convertedRepo = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "images", "out"));
 
         logger.LogInformation($"Database path: {db.DbPath}.");
-       
-        this.ofs = db.OriginalFiles.Include(o => o.convertedFiles).Include(o => o.conversions).ToList();        
+
+        this.ofs = db.OriginalFiles.Include(o => o.ConvertedFiles).Include(o => o.Conversions).ToList();
     }
 
     [HttpGet(Name = "GetInfo")]
     public IEnumerable<OriginalFile> Get()
     {
-        return this.ofs = db.OriginalFiles.Include(o => o.convertedFiles).Include(o => o.conversions).ToList();
+        return this.ofs = db.OriginalFiles.Include(o => o.ConvertedFiles).Include(o => o.Conversions).ToList();
     }
 
     [HttpDelete(Name = "DeleteConvertedFiles")]
@@ -72,12 +72,12 @@ public class IMController : Controller
 
         var fileName = Util.getFileName(originalFile);
 
-        foreach (ConversionInfo con in originalFile.conversions)
+        foreach (ConversionInfo con in originalFile.Conversions)
         {
-            var convertedFile = originalFile.convertedFiles.Where(c => con.Equals(c.Conversion)).SingleOrDefault();
+            var convertedFile = originalFile.ConvertedFiles.Where(c => con.Equals(c.Conversion)).SingleOrDefault();
             if (convertedFile != null && !convertedRepo.GetFileInfo(Util.getFileName(convertedFile)).Exists)
             {
-                originalFile.convertedFiles.Remove(convertedFile);
+                originalFile.ConvertedFiles.Remove(convertedFile);
                 convertedFile = null;
             }
 
@@ -85,7 +85,7 @@ public class IMController : Controller
             {
                 var convertedFileInfo = ConvertImageFromOneFormatToAnother(fileName, con);
                 Util.checkFile(convertedFileInfo, logger, out string name, out string num, out Lang lang, out string type, out uint crc);
-                originalFile.convertedFiles.Add(new ConvertedFile
+                originalFile.ConvertedFiles.Add(new ConvertedFile
                 {
                     FileName = name,
                     Conversion = con,
@@ -101,17 +101,18 @@ public class IMController : Controller
     private OriginalFile checkFileHasChanged(IFileInfo file)
     {
         Util.checkFile(file, logger, out string name, out string num, out Lang lang, out string type, out uint crc);
-        var conversionsList = new List<ConversionInfo>(Util.DEFAULT_CONVERSIONS).Select(ci => ci.copy(name)).ToList();
+        var conversions = new List<ConversionInfo>(Util.DEFAULT_CONVERSIONS).Select(ci => ci.copy(name)).ToList();
         var originalFile = ofs.SingleOrDefault(c => c.FileName == name) ?? new OriginalFile
         {
             FileName = name,
-            Artikelnummer = num,
-            FileType = type,
-            FileLength = file.Length,
-            FileCrc = crc,
-            conversions = conversionsList,
-            WebURL = new Uri("/img/orig/" + Path.GetFileName(file.PhysicalPath), UriKind.Relative)
+            Artikelnummer = num
         };
+        originalFile.FileCrc = crc;
+        originalFile.FileType = type;
+        originalFile.FileLength = file.Length;
+        originalFile.Conversions.AddRange(
+            conversions.Where(x => !originalFile.Conversions.Any(y => y.ConveretedFilePath == x.ConveretedFilePath)));
+        originalFile.WebURL = new Uri("/img/orig/" + Path.GetFileName(file.PhysicalPath), UriKind.Relative);
         Util.AddOrUpdate(db, originalFile, logger);
         return originalFile;
     }
@@ -142,7 +143,7 @@ public class IMController : Controller
             shadow.Shadow(0, 0, 40.0 * image.Width / 2000.0, (Percentage)90, MagickColors.Black);   // -background black -shadow 100x10+0+0
             shadow.BackgroundColor = new MagickColor(con.BackgroundColor); // -background from db
                                                                            // +swap changes the order of the images we just add them in a different order
-            // -alpha set
+                                                                           // -alpha set
             image.Alpha(AlphaOption.Set);
             // -virtual-pixel transparent
             image.VirtualPixelMethod = VirtualPixelMethod.Transparent;

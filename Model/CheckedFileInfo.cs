@@ -47,11 +47,11 @@ public record OriginalFile
     public string? Artikelnummer { get; init; }
     public Lang lang { get; init; } = Lang.DE;
     public string? FileType { get; set; }
-    public uint FileCrc { get; init; }
-    public long FileLength { get; init; }
-    public Uri? WebURL { get; init; }
-    public List<ConversionInfo> conversions { get; init; } = new();
-    public List<ConvertedFile> convertedFiles { get; } = new();
+    public uint FileCrc { get; set; }
+    public long FileLength { get; set; }
+    public Uri? WebURL { get; set; }
+    public List<ConversionInfo> Conversions { get; } = new();
+    public List<ConvertedFile> ConvertedFiles { get; } = new();
 }
 
 public record ConversionInfo
@@ -107,14 +107,6 @@ static public class Util
             Width = 100,
             Height = 100,
             BackgroundColor = "#FFFFFFFF",
-        },
-        new ConversionInfo {
-            ConversionName = "bunt",
-            Type = ConversionType.thumb,
-            Label = string.Empty,
-            Width = 100,
-            Height = 100,
-            BackgroundColor = "#12345678",
         },
         new ConversionInfo {
             ConversionName = "100x100",
@@ -173,7 +165,7 @@ static public class Util
                 break;
             case EntityState.Modified:
                 logger.LogInformation("Orginal File has changed, drop converted files");
-                (entity as OriginalFile)?.convertedFiles.Clear();
+                (entity as OriginalFile)?.ConvertedFiles.Clear();
                 ctx.Update(entity);
                 break;
             case EntityState.Added:
