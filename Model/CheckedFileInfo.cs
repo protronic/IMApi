@@ -66,11 +66,12 @@ public record ConversionInfo
     public int Height { get; init; }
     public string BackgroundColor {get; init;} = "#00000000"; // MagickColor.Transparent
 
-    public ConversionInfo copy(string newName) {
+    public ConversionInfo getInstance(string newName, string? label = null) {
         var cp = (ConversionInfo)this.MemberwiseClone();
-        cp.ConveretedFilePath = cp.ConversionName + "/" + newName + "." + cp.FileType;
+        cp.ConveretedFilePath = cp.ConversionName + "/" + newName + (String.IsNullOrEmpty(label) ? ("_" + label) : "") + "." + cp.FileType;
         return cp;
     }
+    
 }
 
 public record ConvertedFile
@@ -137,6 +138,23 @@ static public class Util
             Height = -1
         }
     };
+
+    // private static ConversionInfo changeLabel(ConversionInfo ci, string label){
+    //     ConversionInfo result = new ConversionInfo();
+    //     result.
+    //     // ci.Label = label;
+    //     return ci;
+    // }
+
+    public static ConversionInfo[] getLabeledConversionInfo(string newLabel) {
+        return DEFAULT_CONVERSIONS.Select(v => new ConversionInfo{
+            ConversionName =  v.ConversionName,
+            Type = v.Type,
+            Label = newLabel,
+            Width =  v.Width,
+            Height = v.Height 
+        }).ToArray();
+    }
 
     public static void GetInfoFromFileName(string originalFileName, out string name, out string artikelnummer, out Lang lang, out string fileType)
     {
