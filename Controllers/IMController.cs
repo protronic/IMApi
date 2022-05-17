@@ -7,27 +7,6 @@ using Protronic.CeckedFileInfo;
 
 namespace IMApi.Controllers;
 
-public record OutputImageFile {
-    [Key]
-    public string? FileName { get; init; }
-    public string? Artikelnummer { get; init; }
-    public Lang lang { get; init; } = Lang.DE;
-    public string? FileType { get; set; }
-    public uint FileCrc { get; set; }
-    public long FileLength { get; set; }
-    public Uri? WebURL { get; set; }
-
-    public OutputImageFile(OriginalFile o){
-        this.FileName = o.FileName;
-        this.Artikelnummer = o.Artikelnummer;
-        this.lang = o.lang;
-        this.FileType = o.FileType;
-        this.FileCrc = o.FileCrc;
-        this.FileLength = o.FileLength;
-        this.WebURL = o.WebURL;
-    }
-}
-
 [ApiController]
 [Route("[controller]")]
 public class IMController : Controller
@@ -50,30 +29,34 @@ public class IMController : Controller
 
         logger.LogInformation($"Database path: {db.DbPath}.");
 
-        this.ofs = db.OriginalFiles.Include(o => o.ConvertedFiles).Include(o => o.Conversions).ToList();
+        this.ofs = db.OriginalFiles
+        .Include(o => o.FileMetaData)
+        .Include(o => o.ConvertedFiles).ThenInclude(cf => cf.FileMetaData)
+        .Include(o => o.Conversions).ToList();
     }
 
     [HttpGet(Name = "GetInfo")]
     public IEnumerable<OriginalFile> Get()
     {
-        return this.ofs = db.OriginalFiles.Include(o => o.ConvertedFiles).Include(o => o.Conversions).ToList();
+        return this.ofs;
     }
 
     [HttpGet("images", Name = "GetImages")]
-    public IEnumerable<OutputImageFile> GetImages()
+    public IEnumerable<FileMeta> GetImages()
     {
-        return db.OriginalFiles.Select(o => new OutputImageFile(o)).ToList();
+        return db.OriginalFiles.Select(o => o.FileMetaData).ToList();
     }
 
     [HttpGet("imageNames", Name = "GetImageNames")]
-    public IEnumerable<string> GetImageNames(){
+    public IEnumerable<string> GetImageNames()
+    {
         return this.originalRepo.GetDirectoryContents("").Select(o => o.Name);
     }
 
     [HttpGet("images/{itemId}", Name = "GetImageNamesByItem")]
-    public IEnumerable<OutputImageFile> GetItemImages(string itemId)
+    public IEnumerable<FileMeta> GetItemImages(string itemId)
     {
-        return db.OriginalFiles.Where(o => o.Artikelnummer == itemId).Select(o => new OutputImageFile(o)).ToList();
+        return db.OriginalFiles.Where(o => o.FileMetaData.Artikelnummer == itemId).Select(o => o.FileMetaData).ToList();
     }
 
     [HttpDelete(Name = "DeleteConvertedFiles")]
@@ -103,7 +86,7 @@ public class IMController : Controller
 
     [HttpPost("{imageName}", Name = "PostProcessLabeledImages")]
     public void ProcessImages(string imageName, string label = "")
-    {      
+    {
         // context.HttpContext.Request.Body;  
         // HttpContext.Request.Body;
         foreach (var f in this.originalRepo.GetDirectoryContents("").Where(f => f.Name == imageName))
@@ -126,7 +109,7 @@ public class IMController : Controller
 
     private void processConverts(OriginalFile originalFile)
     {
-        _ = originalFile.FileName ?? throw new NullReferenceException(nameof(originalFile.FileName));
+        _ = originalFile.FileMetaData.FileName ?? throw new NullReferenceException(nameof(originalFile.FileMetaData.FileName));
 
         var fileName = Util.getFileName(originalFile);
 
@@ -145,12 +128,16 @@ public class IMController : Controller
                 Util.checkFile(convertedFileInfo, logger, out string name, out string num, out Lang lang, out string type, out uint crc);
                 originalFile.ConvertedFiles.Add(new ConvertedFile
                 {
-                    FileName = name,
+                    ConveretedFilePath = convertedFileInfo.PhysicalPath,
+                    FileMetaData = new FileMeta
+                    {
+                        FileName = name,
+                        FileType = type,
+                        FileCrc = crc,
+                        FileLength = convertedFileInfo.Length,
+                        WebURL = new Uri("/img/out/" + con.ConversionName + "/" + fileName, UriKind.Relative)
+                    },
                     Conversion = con,
-                    FileType = type,
-                    FileCrc = crc,
-                    FileLength = convertedFileInfo.Length,
-                    WebURL = new Uri("/img/out/" + con.ConversionName + "/" + fileName, UriKind.Relative)
                 });
             }
         }
@@ -160,17 +147,21 @@ public class IMController : Controller
     {
         Util.checkFile(file, logger, out string name, out string num, out Lang lang, out string type, out uint crc);
         var conversions = new List<ConversionInfo>(Util.DEFAULT_CONVERSIONS).Select(ci => ci.getInstance(name)).ToList();
-        var originalFile = ofs.SingleOrDefault(c => c.FileName == name) ?? new OriginalFile
+        var originalFile = ofs.SingleOrDefault(c => c.FileMetaData.FileName == name) ?? new OriginalFile
         {
-            FileName = name,
-            Artikelnummer = num
+            FilePath = file.PhysicalPath,
+            FileMetaData = new FileMeta
+            {
+                FileName = name,
+                Artikelnummer = num
+            }
         };
-        originalFile.FileCrc = crc;
-        originalFile.FileType = type;
-        originalFile.FileLength = file.Length;
+        originalFile.FileMetaData.FileCrc = crc;
+        originalFile.FileMetaData.FileType = type;
+        originalFile.FileMetaData.FileLength = file.Length;
         originalFile.Conversions.AddRange(
             conversions.Where(x => !originalFile.Conversions.Any(y => y.ConveretedFilePath == x.ConveretedFilePath)));
-        originalFile.WebURL = new Uri("/img/orig/" + Path.GetFileName(file.PhysicalPath), UriKind.Relative);
+        originalFile.FileMetaData.WebURL = new Uri("/img/orig/" + Path.GetFileName(file.PhysicalPath), UriKind.Relative);
         Util.AddOrUpdate(db, originalFile, logger);
         return originalFile;
     }
@@ -179,17 +170,21 @@ public class IMController : Controller
     {
         Util.checkFile(file, logger, out string name, out string num, out Lang lang, out string type, out uint crc);
         var conversions = new List<ConversionInfo>(Util.getLabeledConversionInfo(label)).Select(ci => ci.getInstance(name)).ToList();
-        var originalFile = ofs.SingleOrDefault(c => c.FileName == name) ?? new OriginalFile
+        var originalFile = ofs.SingleOrDefault(c => c.FileMetaData.FileName == name) ?? new OriginalFile
         {
-            FileName = name,
-            Artikelnummer = num
+            FilePath = file.PhysicalPath,
+            FileMetaData = new FileMeta
+            {
+                FileName = name,
+                Artikelnummer = num
+            }
         };
-        originalFile.FileCrc = crc;
-        originalFile.FileType = type;
-        originalFile.FileLength = file.Length;
+        originalFile.FileMetaData.FileCrc = crc;
+        originalFile.FileMetaData.FileType = type;
+        originalFile.FileMetaData.FileLength = file.Length;
         originalFile.Conversions.AddRange(
             conversions.Where(x => !originalFile.Conversions.Any(y => y.ConveretedFilePath == x.ConveretedFilePath)));
-        originalFile.WebURL = new Uri("/img/orig/" + Path.GetFileName(file.PhysicalPath), UriKind.Relative);
+        originalFile.FileMetaData.WebURL = new Uri("/img/orig/" + Path.GetFileName(file.PhysicalPath), UriKind.Relative);
         Util.AddOrUpdate(db, originalFile, logger);
         return originalFile;
     }

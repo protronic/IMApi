@@ -10,7 +10,7 @@ using Protronic.CeckedFileInfo;
 namespace IMApi.Migrations
 {
     [DbContext(typeof(CheckedFileContext))]
-    [Migration("20220517053130_InitialCreate")]
+    [Migration("20220517064606_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -41,7 +41,7 @@ namespace IMApi.Migrations
                     b.Property<string>("Label")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("OriginalFileFileName")
+                    b.Property<string>("OriginalFileFilePath")
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("Type")
@@ -52,46 +52,39 @@ namespace IMApi.Migrations
 
                     b.HasKey("ConveretedFilePath");
 
-                    b.HasIndex("OriginalFileFileName");
+                    b.HasIndex("OriginalFileFilePath");
 
                     b.ToTable("Conversions");
                 });
 
             modelBuilder.Entity("Protronic.CeckedFileInfo.ConvertedFile", b =>
                 {
-                    b.Property<string>("WebURL")
+                    b.Property<string>("ConveretedFilePath")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ConversionConveretedFilePath")
                         .HasColumnType("TEXT");
 
-                    b.Property<uint>("FileCrc")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<long>("FileLength")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("FileName")
+                    b.Property<string>("FileMetaDataWebURL")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("FileType")
+                    b.Property<string>("OriginalFileFilePath")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("OriginalFileFileName")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("WebURL");
+                    b.HasKey("ConveretedFilePath");
 
                     b.HasIndex("ConversionConveretedFilePath");
 
-                    b.HasIndex("OriginalFileFileName");
+                    b.HasIndex("FileMetaDataWebURL");
+
+                    b.HasIndex("OriginalFileFilePath");
 
                     b.ToTable("ConvertedFiles");
                 });
 
-            modelBuilder.Entity("Protronic.CeckedFileInfo.OriginalFile", b =>
+            modelBuilder.Entity("Protronic.CeckedFileInfo.FileMeta", b =>
                 {
-                    b.Property<string>("FileName")
+                    b.Property<string>("WebURL")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Artikelnummer")
@@ -103,16 +96,31 @@ namespace IMApi.Migrations
                     b.Property<long>("FileLength")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("FileType")
+                    b.Property<string>("FileName")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("WebURL")
+                    b.Property<string>("FileType")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("lang")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("FileName");
+                    b.HasKey("WebURL");
+
+                    b.ToTable("FileMeta");
+                });
+
+            modelBuilder.Entity("Protronic.CeckedFileInfo.OriginalFile", b =>
+                {
+                    b.Property<string>("FilePath")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FileMetaDataWebURL")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("FilePath");
+
+                    b.HasIndex("FileMetaDataWebURL");
 
                     b.ToTable("OriginalFiles");
                 });
@@ -121,7 +129,7 @@ namespace IMApi.Migrations
                 {
                     b.HasOne("Protronic.CeckedFileInfo.OriginalFile", null)
                         .WithMany("Conversions")
-                        .HasForeignKey("OriginalFileFileName");
+                        .HasForeignKey("OriginalFileFilePath");
                 });
 
             modelBuilder.Entity("Protronic.CeckedFileInfo.ConvertedFile", b =>
@@ -130,11 +138,26 @@ namespace IMApi.Migrations
                         .WithMany()
                         .HasForeignKey("ConversionConveretedFilePath");
 
+                    b.HasOne("Protronic.CeckedFileInfo.FileMeta", "FileMetaData")
+                        .WithMany()
+                        .HasForeignKey("FileMetaDataWebURL");
+
                     b.HasOne("Protronic.CeckedFileInfo.OriginalFile", null)
                         .WithMany("ConvertedFiles")
-                        .HasForeignKey("OriginalFileFileName");
+                        .HasForeignKey("OriginalFileFilePath");
 
                     b.Navigation("Conversion");
+
+                    b.Navigation("FileMetaData");
+                });
+
+            modelBuilder.Entity("Protronic.CeckedFileInfo.OriginalFile", b =>
+                {
+                    b.HasOne("Protronic.CeckedFileInfo.FileMeta", "FileMetaData")
+                        .WithMany()
+                        .HasForeignKey("FileMetaDataWebURL");
+
+                    b.Navigation("FileMetaData");
                 });
 
             modelBuilder.Entity("Protronic.CeckedFileInfo.OriginalFile", b =>

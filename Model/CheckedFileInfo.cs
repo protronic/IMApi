@@ -40,16 +40,23 @@ public enum Lang
     DE, EN
 }
 
-public record OriginalFile
-{
+
+public record FileMeta {
     [Key]
+    public Uri? WebURL { get; set; }
     public string? FileName { get; init; }
     public string? Artikelnummer { get; init; }
     public Lang lang { get; init; } = Lang.DE;
     public string? FileType { get; set; }
     public uint FileCrc { get; set; }
     public long FileLength { get; set; }
-    public Uri? WebURL { get; set; }
+}
+
+public record OriginalFile
+{
+    [Key]
+    public string? FilePath { get; init; }
+    public FileMeta? FileMetaData { get; set; }
     public List<ConversionInfo> Conversions { get; } = new();
     public List<ConvertedFile> ConvertedFiles { get; } = new();
 }
@@ -77,12 +84,9 @@ public record ConversionInfo
 public record ConvertedFile
 {
     [Key]
-    public Uri? WebURL { get; init; }
-    public string? FileName { get; init; }
+    public string? ConveretedFilePath { get; init; }
+    public FileMeta? FileMetaData { get; set; }
     public ConversionInfo? Conversion { get; init; }
-    public string? FileType { get; set; }
-    public uint FileCrc { get; init; }
-    public long FileLength { get; init; }
 }
 
 public class WrongFilenameFormatException : ArgumentException
@@ -219,14 +223,16 @@ static public class Util
     }
     public static string getFileName(OriginalFile f)
     {
-        return f.FileName + "." + f.FileType;
+        _ = f.FileMetaData ?? throw new NullReferenceException(nameof(f.FileMetaData));
+        return f.FileMetaData.FileName + "." + f.FileMetaData.FileType;
     }
 
     public static string getFileName(ConvertedFile f)
     {
-        _ = f.FileName ?? throw new NullReferenceException(nameof(f.FileName));
+        _ = f.FileMetaData ?? throw new NullReferenceException(nameof(f.FileMetaData));
+        _ = f.FileMetaData.FileName ?? throw new NullReferenceException(nameof(f.FileMetaData));
         _ = f.Conversion ?? throw new NullReferenceException(nameof(f.Conversion));
         _ = f.Conversion.ConversionName ?? throw new NullReferenceException(nameof(f.Conversion.ConversionName));
-        return Path.Combine(f.Conversion.ConversionName, Path.GetFileNameWithoutExtension(f.FileName)) + "." + f.FileType;
+        return Path.Combine(f.Conversion.ConversionName, Path.GetFileNameWithoutExtension(f.FileMetaData.FileName)) + "." + f.FileMetaData.FileType;
     }
 }

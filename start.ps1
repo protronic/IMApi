@@ -16,5 +16,6 @@ if ($cmd -eq "upgrade") {
 if ($cmd -eq "update") {
   dotnet ef database update;
 }
-
-dotnet watch;
+if ($cmd -eq "watch") {
+  dotnet watch;
+}

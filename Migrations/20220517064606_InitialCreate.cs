@@ -11,20 +11,37 @@ namespace IMApi.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "OriginalFiles",
+                name: "FileMeta",
                 columns: table => new
                 {
-                    FileName = table.Column<string>(type: "TEXT", nullable: false),
+                    WebURL = table.Column<string>(type: "TEXT", nullable: false),
+                    FileName = table.Column<string>(type: "TEXT", nullable: true),
                     Artikelnummer = table.Column<string>(type: "TEXT", nullable: true),
                     lang = table.Column<int>(type: "INTEGER", nullable: false),
                     FileType = table.Column<string>(type: "TEXT", nullable: true),
                     FileCrc = table.Column<uint>(type: "INTEGER", nullable: false),
-                    FileLength = table.Column<long>(type: "INTEGER", nullable: false),
-                    WebURL = table.Column<string>(type: "TEXT", nullable: true)
+                    FileLength = table.Column<long>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_OriginalFiles", x => x.FileName);
+                    table.PrimaryKey("PK_FileMeta", x => x.WebURL);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OriginalFiles",
+                columns: table => new
+                {
+                    FilePath = table.Column<string>(type: "TEXT", nullable: false),
+                    FileMetaDataWebURL = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OriginalFiles", x => x.FilePath);
+                    table.ForeignKey(
+                        name: "FK_OriginalFiles_FileMeta_FileMetaDataWebURL",
+                        column: x => x.FileMetaDataWebURL,
+                        principalTable: "FileMeta",
+                        principalColumn: "WebURL");
                 });
 
             migrationBuilder.CreateTable(
@@ -39,49 +56,51 @@ namespace IMApi.Migrations
                     Width = table.Column<int>(type: "INTEGER", nullable: false),
                     Height = table.Column<int>(type: "INTEGER", nullable: false),
                     BackgroundColor = table.Column<string>(type: "TEXT", nullable: false),
-                    OriginalFileFileName = table.Column<string>(type: "TEXT", nullable: true)
+                    OriginalFileFilePath = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Conversions", x => x.ConveretedFilePath);
                     table.ForeignKey(
-                        name: "FK_Conversions_OriginalFiles_OriginalFileFileName",
-                        column: x => x.OriginalFileFileName,
+                        name: "FK_Conversions_OriginalFiles_OriginalFileFilePath",
+                        column: x => x.OriginalFileFilePath,
                         principalTable: "OriginalFiles",
-                        principalColumn: "FileName");
+                        principalColumn: "FilePath");
                 });
 
             migrationBuilder.CreateTable(
                 name: "ConvertedFiles",
                 columns: table => new
                 {
-                    WebURL = table.Column<string>(type: "TEXT", nullable: false),
-                    FileName = table.Column<string>(type: "TEXT", nullable: true),
+                    ConveretedFilePath = table.Column<string>(type: "TEXT", nullable: false),
+                    FileMetaDataWebURL = table.Column<string>(type: "TEXT", nullable: true),
                     ConversionConveretedFilePath = table.Column<string>(type: "TEXT", nullable: true),
-                    FileType = table.Column<string>(type: "TEXT", nullable: true),
-                    FileCrc = table.Column<uint>(type: "INTEGER", nullable: false),
-                    FileLength = table.Column<long>(type: "INTEGER", nullable: false),
-                    OriginalFileFileName = table.Column<string>(type: "TEXT", nullable: true)
+                    OriginalFileFilePath = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ConvertedFiles", x => x.WebURL);
+                    table.PrimaryKey("PK_ConvertedFiles", x => x.ConveretedFilePath);
                     table.ForeignKey(
                         name: "FK_ConvertedFiles_Conversions_ConversionConveretedFilePath",
                         column: x => x.ConversionConveretedFilePath,
                         principalTable: "Conversions",
                         principalColumn: "ConveretedFilePath");
                     table.ForeignKey(
-                        name: "FK_ConvertedFiles_OriginalFiles_OriginalFileFileName",
-                        column: x => x.OriginalFileFileName,
+                        name: "FK_ConvertedFiles_FileMeta_FileMetaDataWebURL",
+                        column: x => x.FileMetaDataWebURL,
+                        principalTable: "FileMeta",
+                        principalColumn: "WebURL");
+                    table.ForeignKey(
+                        name: "FK_ConvertedFiles_OriginalFiles_OriginalFileFilePath",
+                        column: x => x.OriginalFileFilePath,
                         principalTable: "OriginalFiles",
-                        principalColumn: "FileName");
+                        principalColumn: "FilePath");
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Conversions_OriginalFileFileName",
+                name: "IX_Conversions_OriginalFileFilePath",
                 table: "Conversions",
-                column: "OriginalFileFileName");
+                column: "OriginalFileFilePath");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ConvertedFiles_ConversionConveretedFilePath",
@@ -89,9 +108,19 @@ namespace IMApi.Migrations
                 column: "ConversionConveretedFilePath");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ConvertedFiles_OriginalFileFileName",
+                name: "IX_ConvertedFiles_FileMetaDataWebURL",
                 table: "ConvertedFiles",
-                column: "OriginalFileFileName");
+                column: "FileMetaDataWebURL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ConvertedFiles_OriginalFileFilePath",
+                table: "ConvertedFiles",
+                column: "OriginalFileFilePath");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OriginalFiles_FileMetaDataWebURL",
+                table: "OriginalFiles",
+                column: "FileMetaDataWebURL");
         }
 
         /// <inheritdoc />
@@ -105,6 +134,9 @@ namespace IMApi.Migrations
 
             migrationBuilder.DropTable(
                 name: "OriginalFiles");
+
+            migrationBuilder.DropTable(
+                name: "FileMeta");
         }
     }
 }
