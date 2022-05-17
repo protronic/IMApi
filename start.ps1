@@ -11,6 +11,7 @@ if ($cmd -eq "update" || $cmd -eq "upgrade") {
 if ($cmd -eq "upgrade") {
   dotnet ef migrations remove --force;
   dotnet ef migrations add InitialCreate;
+  dotnet ef database update;
 }
 if ($cmd -eq "update") {
   dotnet ef database update;

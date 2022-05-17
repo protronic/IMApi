@@ -10,14 +10,14 @@ using Protronic.CeckedFileInfo;
 namespace IMApi.Migrations
 {
     [DbContext(typeof(CheckedFileContext))]
-    [Migration("20220413072628_InitialCreate")]
+    [Migration("20220517053130_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "7.0.0-preview.2.22153.1");
+            modelBuilder.HasAnnotation("ProductVersion", "7.0.0-preview.4.22229.2");
 
             modelBuilder.Entity("Protronic.CeckedFileInfo.ConversionInfo", b =>
                 {
@@ -120,7 +120,7 @@ namespace IMApi.Migrations
             modelBuilder.Entity("Protronic.CeckedFileInfo.ConversionInfo", b =>
                 {
                     b.HasOne("Protronic.CeckedFileInfo.OriginalFile", null)
-                        .WithMany("conversions")
+                        .WithMany("Conversions")
                         .HasForeignKey("OriginalFileFileName");
                 });
 
@@ -131,7 +131,7 @@ namespace IMApi.Migrations
                         .HasForeignKey("ConversionConveretedFilePath");
 
                     b.HasOne("Protronic.CeckedFileInfo.OriginalFile", null)
-                        .WithMany("convertedFiles")
+                        .WithMany("ConvertedFiles")
                         .HasForeignKey("OriginalFileFileName");
 
                     b.Navigation("Conversion");
@@ -139,9 +139,9 @@ namespace IMApi.Migrations
 
             modelBuilder.Entity("Protronic.CeckedFileInfo.OriginalFile", b =>
                 {
-                    b.Navigation("conversions");
+                    b.Navigation("Conversions");
 
-                    b.Navigation("convertedFiles");
+                    b.Navigation("ConvertedFiles");
                 });
 #pragma warning restore 612, 618
         }
