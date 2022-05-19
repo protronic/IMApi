@@ -88,7 +88,7 @@ public record ConvertedFile
     [Key]
     public string ConveretedFilePath { get; init; } = null!;
     public FileMeta FileMetaData { get; set; } = null!;
-    public ConversionInfo? Conversion { get; init; }
+    public ConversionInfo Conversion { get; init; } = null!;
 }
 
 public class WrongFilenameFormatException : ArgumentException
@@ -227,16 +227,11 @@ static public class Util
     }
     public static string getFileName(OriginalFile f)
     {
-        _ = f.FileMetaData ?? throw new NullReferenceException(nameof(f.FileMetaData));
         return f.FileMetaData.FileName + "." + f.FileMetaData.FileType;
     }
 
     public static string getFileName(ConvertedFile f)
     {
-        _ = f.FileMetaData ?? throw new NullReferenceException(nameof(f.FileMetaData));
-        _ = f.FileMetaData.FileName ?? throw new NullReferenceException(nameof(f.FileMetaData));
-        _ = f.Conversion ?? throw new NullReferenceException(nameof(f.Conversion));
-        _ = f.Conversion.ConversionName ?? throw new NullReferenceException(nameof(f.Conversion.ConversionName));
         return Path.Combine(f.Conversion.ConversionName, Path.GetFileNameWithoutExtension(f.FileMetaData.FileName)) + "." + f.FileMetaData.FileType;
     }
 }

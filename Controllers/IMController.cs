@@ -107,8 +107,6 @@ public class IMController : Controller
 
     private void processConverts(OriginalFile originalFile)
     {
-        _ = originalFile.FileMetaData.FileName ?? throw new NullReferenceException(nameof(originalFile.FileMetaData.FileName));
-
         var fileName = Util.getFileName(originalFile);
 
         foreach (ConversionInfo con in originalFile.Conversions)
@@ -168,7 +166,6 @@ public class IMController : Controller
     private IFileInfo ConvertImageFromOneFormatToAnother(string srcfile, ConversionInfo con)
     {
         IFileInfo outfile;
-        _ = con.ConversionName ?? throw new NullReferenceException(nameof(con.ConversionName));
         var srcFilePath = originalRepo.GetFileInfo(srcfile).PhysicalPath;
         var conversionFilePath = Path.Combine(con.ConversionName, Path.GetFileNameWithoutExtension(srcFilePath)) + "." + con.FileType;
         outfile = convertedRepo.GetFileInfo(conversionFilePath);
