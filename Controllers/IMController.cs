@@ -199,8 +199,29 @@ public class IMController : Controller
             image.Level(new Percentage(50), new Percentage(100), Channels.Alpha);
             // +channel cancels only allow operations on the alpha channel.
 
+            if (!String.IsNullOrEmpty(con.Label))
+            {
+                // Text label watermark settings
+                var labelSettings = new MagickReadSettings()
+                {
+                    BackgroundColor = new MagickColor(MagickColors.Transparent),
+                    // Font = "Arial",
+                    // FontPointsize = images.FontSize,
+                    FillColor = MagickColors.White
+                };
+
+                // Create the label image.
+                var label = new MagickImage(con.Label, labelSettings);
+
+                // Extent the width of the label to match the width of the original image.
+                label.Extent(image.Width, 0, Gravity.South);
+                label.Transparent(MagickColors.Black);
+            }
+
             images.Add(shadow);
             images.Add(image.Clone());
+
+
             using (var merged = images.Merge()) // -layers merge
             {
                 // Save
