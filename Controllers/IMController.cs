@@ -14,7 +14,6 @@ public class IMController : Controller
     private readonly ILogger<IMController> logger;
     private IWebHostEnvironment env;
     private PhysicalFileProvider originalRepo;
-    private PhysicalFileProvider labeledRepo;
     private PhysicalFileProvider convertedRepo;
     private CheckedFileContext db = new CheckedFileContext();
     private List<OriginalFile> ofs;
@@ -25,7 +24,6 @@ public class IMController : Controller
         this.env = env;
         this.originalRepo = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "images", "orig"));
         this.convertedRepo = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "images", "out"));
-        this.labeledRepo = new PhysicalFileProvider(Path.Combine(this.env.WebRootPath, "images", "labeled"));
 
         logger.LogInformation($"Database path: {db.DbPath}.");
 
@@ -94,7 +92,7 @@ public class IMController : Controller
             // logger.LogInformation($"FileName: {f.Name}.");
             if (GetFormatInformation(f) != null)
             {
-                var originalFile = checkLabeledFileHasChanged(f, label);
+                var originalFile = checkFileHasChanged(f, label);
                 processConverts(originalFile);
             }
         };
@@ -143,33 +141,11 @@ public class IMController : Controller
         }
     }
 
-    private OriginalFile checkFileHasChanged(IFileInfo file)
+    private OriginalFile checkFileHasChanged(IFileInfo file, string? label = null)
     {
         Util.checkFile(file, logger, out string name, out string num, out Lang lang, out string type, out uint crc);
-        var conversions = new List<ConversionInfo>(Util.DEFAULT_CONVERSIONS).Select(ci => ci.getInstance(name)).ToList();
-        var originalFile = ofs.SingleOrDefault(c => c.FileMetaData.FileName == name) ?? new OriginalFile
-        {
-            FilePath = file.PhysicalPath,
-            FileMetaData = new FileMeta
-            {
-                FileName = name,
-                Artikelnummer = num
-            }
-        };
-        originalFile.FileMetaData.FileCrc = crc;
-        originalFile.FileMetaData.FileType = type;
-        originalFile.FileMetaData.FileLength = file.Length;
-        originalFile.Conversions.AddRange(
-            conversions.Where(x => !originalFile.Conversions.Any(y => y.ConveretedFilePath == x.ConveretedFilePath)));
-        originalFile.FileMetaData.WebURL = new Uri("/img/orig/" + Path.GetFileName(file.PhysicalPath), UriKind.Relative);
-        Util.AddOrUpdate(db, originalFile, logger);
-        return originalFile;
-    }
-
-    private OriginalFile checkLabeledFileHasChanged(IFileInfo file, string label)
-    {
-        Util.checkFile(file, logger, out string name, out string num, out Lang lang, out string type, out uint crc);
-        var conversions = new List<ConversionInfo>(Util.getLabeledConversionInfo(label)).Select(ci => ci.getInstance(name)).ToList();
+        var c = String.IsNullOrEmpty(label) ? Util.DEFAULT_CONVERSIONS : Util.getLabeledConversionInfo(label);
+        var conversions = new List<ConversionInfo>(c).Select(ci => ci.getInstance(name)).ToList();
         var originalFile = ofs.SingleOrDefault(c => c.FileMetaData.FileName == name) ?? new OriginalFile
         {
             FilePath = file.PhysicalPath,
