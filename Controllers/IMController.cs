@@ -44,7 +44,7 @@ public class IMController : Controller
     [HttpGet("images", Name = "GetImages")]
     public IEnumerable<FileMeta> GetImages()
     {
-        return db.OriginalFiles.Select(o => o.FileMetaData).ToList();
+        return db.OriginalFiles.Select(o => o.FileMetaData);
     }
 
     [HttpGet("imageNames", Name = "GetImageNames")]

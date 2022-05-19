@@ -41,13 +41,14 @@ public enum Lang
 }
 
 
-public record FileMeta {
+public record FileMeta
+{
     [Key]
-    public Uri? WebURL { get; set; }
-    public string? FileName { get; init; }
-    public string? Artikelnummer { get; init; }
+    public Uri WebURL { get; set; } = null!;
+    public string FileName { get; init; } = null!;
+    public string Artikelnummer { get; init; } = null!;
     public Lang lang { get; init; } = Lang.DE;
-    public string? FileType { get; set; }
+    public string FileType { get; set; } = null!;
     public uint FileCrc { get; set; }
     public long FileLength { get; set; }
 }
@@ -55,8 +56,8 @@ public record FileMeta {
 public record OriginalFile
 {
     [Key]
-    public string? FilePath { get; init; }
-    public FileMeta? FileMetaData { get; set; }
+    public string FilePath { get; init; } = null!;
+    public FileMeta FileMetaData { get; set; } = null!;
     public List<ConversionInfo> Conversions { get; } = new();
     public List<ConvertedFile> ConvertedFiles { get; } = new();
 }
@@ -64,28 +65,29 @@ public record OriginalFile
 public record ConversionInfo
 {
     [Key]
-    public string? ConveretedFilePath { get; set; }
-    public string? ConversionName { get; init; }
+    public string ConveretedFilePath { get; set; } = null!;
+    public string ConversionName { get; init; } = null!;
     public string FileType { get; init; } = "png";
-    public ConversionType? Type { get; init; }
-    public string? Label { get; init; }
+    public ConversionType Type { get; init; }
+    public string Label { get; init; } = null!;
     public int Width { get; init; }
     public int Height { get; init; }
-    public string BackgroundColor {get; init;} = "#00000000"; // MagickColor.Transparent
+    public string BackgroundColor { get; init; } = "#00000000"; // MagickColor.Transparent
 
-    public ConversionInfo getInstance(string newName, string? label = null) {
+    public ConversionInfo getInstance(string newName, string? label = null)
+    {
         var cp = (ConversionInfo)this.MemberwiseClone();
         cp.ConveretedFilePath = cp.ConversionName + "/" + newName + (String.IsNullOrEmpty(label) ? ("_" + label) : "") + "." + cp.FileType;
         return cp;
     }
-    
+
 }
 
 public record ConvertedFile
 {
     [Key]
-    public string? ConveretedFilePath { get; init; }
-    public FileMeta? FileMetaData { get; set; }
+    public string ConveretedFilePath { get; init; } = null!;
+    public FileMeta FileMetaData { get; set; } = null!;
     public ConversionInfo? Conversion { get; init; }
 }
 
@@ -150,13 +152,15 @@ static public class Util
     //     return ci;
     // }
 
-    public static ConversionInfo[] getLabeledConversionInfo(string newLabel) {
-        return DEFAULT_CONVERSIONS.Select(v => new ConversionInfo{
-            ConversionName =  v.ConversionName,
+    public static ConversionInfo[] getLabeledConversionInfo(string newLabel)
+    {
+        return DEFAULT_CONVERSIONS.Select(v => new ConversionInfo
+        {
+            ConversionName = v.ConversionName,
             Type = v.Type,
             Label = newLabel,
-            Width =  v.Width,
-            Height = v.Height 
+            Width = v.Width,
+            Height = v.Height
         }).ToArray();
     }
 
