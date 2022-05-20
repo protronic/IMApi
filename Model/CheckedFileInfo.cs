@@ -204,6 +204,7 @@ static public class Util
             default:
                 throw new ArgumentOutOfRangeException();
         }
+        logger.LogInformation($"EntityState: {entry.State}");
     }
 
     public static void checkFile(IFileInfo file, ILogger logger, out string filename,
