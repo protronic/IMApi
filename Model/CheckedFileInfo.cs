@@ -69,15 +69,15 @@ public record ConversionInfo
     public string ConversionName { get; init; } = null!;
     public string FileType { get; init; } = "png";
     public ConversionType Type { get; init; }
-    public string Label { get; init; } = null!;
+    public string? Label { get; init; }
     public int Width { get; init; }
     public int Height { get; init; }
     public string BackgroundColor { get; init; } = "#00000000"; // MagickColor.Transparent
 
-    public ConversionInfo getInstance(string newName, string? label = null)
+    public ConversionInfo getInstance(string newName)
     {
         var cp = (ConversionInfo)this.MemberwiseClone();
-        cp.ConveretedFilePath = cp.ConversionName + "/" + newName + (String.IsNullOrEmpty(label) ? ("_" + label) : "") + "." + cp.FileType;
+        cp.ConveretedFilePath = cp.ConversionName + "/" + newName + (String.IsNullOrEmpty(this.Label) ? ("_" + this.Label) : "") + "." + cp.FileType;
         return cp;
     }
 

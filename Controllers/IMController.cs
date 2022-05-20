@@ -54,7 +54,7 @@ public class IMController : Controller
     [HttpGet("images/{itemId}", Name = "GetImageNamesByItem")]
     public IEnumerable<FileMeta> GetItemImages(string itemId)
     {
-        return db.OriginalFiles.Where(o => o.FileMetaData.Artikelnummer == itemId).Select(o => o.FileMetaData).ToList();
+        return db.OriginalFiles.Where(o => o.FileMetaData.Artikelnummer == itemId).Select(o => o.FileMetaData);
     }
 
     [HttpDelete(Name = "DeleteConvertedFiles")]
@@ -89,7 +89,7 @@ public class IMController : Controller
         // HttpContext.Request.Body;
         foreach (var f in this.originalRepo.GetDirectoryContents("").Where(f => f.Name == imageName))
         {
-            // logger.LogInformation($"FileName: {f.Name}.");
+            logger.LogInformation($"FileName: {f.Name}.");
             if (GetFormatInformation(f) != null)
             {
                 var originalFile = checkFileHasChanged(f, label);
@@ -201,21 +201,22 @@ public class IMController : Controller
 
             if (!String.IsNullOrEmpty(con.Label))
             {
-                // Text label watermark settings
-                var labelSettings = new MagickReadSettings()
+                var readSettings = new MagickReadSettings
                 {
-                    BackgroundColor = new MagickColor(MagickColors.Transparent),
-                    // Font = "Arial",
-                    // FontPointsize = images.FontSize,
-                    FillColor = MagickColors.White
+                    Font = "Arial",
+                    TextGravity = Gravity.South,
+                    FillColor = MagickColors.White,
+                    TextUnderColor = new MagickColor("#00000040"),
+                    BackgroundColor = MagickColors.Transparent,
+                    Height = image.Height, // height of text box
+                    Width = image.Width // width of text box
                 };
-
-                // Create the label image.
-                var label = new MagickImage(con.Label, labelSettings);
-
-                // Extent the width of the label to match the width of the original image.
-                label.Extent(image.Width, 0, Gravity.South);
-                label.Transparent(MagickColors.Black);
+                
+                using (var caption = new MagickImage($"label:{con.Label}", readSettings))
+                {
+                    //image is your main image where you need to put text
+                    image.Composite(caption, Gravity.South, CompositeOperator.Over);
+                }                
             }
 
             images.Add(shadow);
