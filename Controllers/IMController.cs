@@ -89,7 +89,7 @@ public class IMController : Controller
         // HttpContext.Request.Body;
         foreach (var f in this.originalRepo.GetDirectoryContents("").Where(f => f.Name == imageName))
         {
-            logger.LogInformation($"FileName: {f.Name}.");
+            logger.LogInformation($"FileName: {f.Name} | Label: {label}");
             if (GetFormatInformation(f) != null)
             {
                 var originalFile = checkFileHasChanged(f, label);
