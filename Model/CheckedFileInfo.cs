@@ -207,6 +207,37 @@ static public class Util
         logger.LogInformation($"EntityState: {entry.State}");
     }
 
+    public static void InsertOrUpdateRange<T, T2>(this T entity, List<T2> updateEntity, DbContext context, ILogger logger)
+        where T : class
+        where T2 : class
+    {
+        foreach (var e in updateEntity)
+        {
+            context.Set<T2>().InsertOrUpdate(e, context, logger);
+        }
+    }
+
+
+    public static void InsertOrUpdate<T, T2>(this T entity, T2 updateEntity, DbContext context,  ILogger logger)
+    where T : class
+    where T2 : class
+    {
+        var entry = context.Entry(updateEntity);
+        if (entry.State == EntityState.Detached)
+        {
+            if (context.Set<T2>().Any(t => t == updateEntity))
+            {
+                context.Set<T2>().Update(updateEntity);                
+            }
+            else
+            {
+                context.Set<T2>().Add(updateEntity);
+            }
+
+        }
+        logger.LogInformation($"EntityState: {entry.State}");
+    }
+
     public static void checkFile(IFileInfo file, ILogger logger, out string filename,
         out string artikelnummer, out Lang language, out string filetype, out uint crc)
     {

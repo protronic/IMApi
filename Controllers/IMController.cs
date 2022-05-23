@@ -159,7 +159,7 @@ public class IMController : Controller
         originalFile.Conversions.AddRange(
             conversions.Where(x => !originalFile.Conversions.Any(y => y.ConveretedFilePath == x.ConveretedFilePath)));
         originalFile.FileMetaData.WebURL = new Uri("/img/orig/" + Path.GetFileName(file.PhysicalPath), UriKind.Relative);
-        Util.AddOrUpdate(db, originalFile, logger);
+        Util.InsertOrUpdate(originalFile, originalFile, db, logger);
         return originalFile;
     }
 
