@@ -92,7 +92,17 @@ public class IMController : Controller
             logger.LogInformation($"FileName: {f.Name} | Label: {label}");
             if (GetFormatInformation(f) != null)
             {
-                var originalFile = checkFileHasChanged(f, label);
+                Util.checkFile(f, logger, out string name, out string num, out Lang lang, out string type, out uint crc);
+                var originalFile = ofs.SingleOrDefault(c => c.FileMetaData.FileName == name);
+                if (originalFile != null)
+                {
+                    var c = Util.getLabeledConversionInfo(label);
+                    
+                }
+                else
+                {
+                    originalFile = checkFileHasChanged(f, label);
+                }
                 processConverts(originalFile);
             }
         };
@@ -156,8 +166,10 @@ public class IMController : Controller
         originalFile.FileMetaData.FileCrc = crc;
         originalFile.FileMetaData.FileType = type;
         originalFile.FileMetaData.FileLength = file.Length;
+
         originalFile.Conversions.AddRange(
             conversions.Where(x => !originalFile.Conversions.Any(y => y.ConveretedFilePath == x.ConveretedFilePath)));
+
         originalFile.FileMetaData.WebURL = new Uri("/img/orig/" + Path.GetFileName(file.PhysicalPath), UriKind.Relative);
         Util.InsertOrUpdate(originalFile, originalFile, db, logger);
         return originalFile;
@@ -211,12 +223,12 @@ public class IMController : Controller
                     Height = image.Height, // height of text box
                     Width = image.Width // width of text box
                 };
-                
+
                 using (var caption = new MagickImage($"label:{con.Label}", readSettings))
                 {
                     //image is your main image where you need to put text
                     image.Composite(caption, Gravity.South, CompositeOperator.Over);
-                }                
+                }
             }
 
             images.Add(shadow);
