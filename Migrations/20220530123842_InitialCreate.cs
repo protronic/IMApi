@@ -15,10 +15,10 @@ namespace IMApi.Migrations
                 columns: table => new
                 {
                     WebURL = table.Column<string>(type: "TEXT", nullable: false),
-                    FileName = table.Column<string>(type: "TEXT", nullable: true),
-                    Artikelnummer = table.Column<string>(type: "TEXT", nullable: true),
+                    FileName = table.Column<string>(type: "TEXT", nullable: false),
+                    Artikelnummer = table.Column<string>(type: "TEXT", nullable: false),
                     lang = table.Column<int>(type: "INTEGER", nullable: false),
-                    FileType = table.Column<string>(type: "TEXT", nullable: true),
+                    FileType = table.Column<string>(type: "TEXT", nullable: false),
                     FileCrc = table.Column<uint>(type: "INTEGER", nullable: false),
                     FileLength = table.Column<long>(type: "INTEGER", nullable: false)
                 },
@@ -32,7 +32,7 @@ namespace IMApi.Migrations
                 columns: table => new
                 {
                     FilePath = table.Column<string>(type: "TEXT", nullable: false),
-                    FileMetaDataWebURL = table.Column<string>(type: "TEXT", nullable: true)
+                    FileMetaDataWebURL = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -41,7 +41,8 @@ namespace IMApi.Migrations
                         name: "FK_OriginalFiles_FileMeta_FileMetaDataWebURL",
                         column: x => x.FileMetaDataWebURL,
                         principalTable: "FileMeta",
-                        principalColumn: "WebURL");
+                        principalColumn: "WebURL",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -49,9 +50,9 @@ namespace IMApi.Migrations
                 columns: table => new
                 {
                     ConveretedFilePath = table.Column<string>(type: "TEXT", nullable: false),
-                    ConversionName = table.Column<string>(type: "TEXT", nullable: true),
+                    ConversionName = table.Column<string>(type: "TEXT", nullable: false),
                     FileType = table.Column<string>(type: "TEXT", nullable: false),
-                    Type = table.Column<int>(type: "INTEGER", nullable: true),
+                    Type = table.Column<int>(type: "INTEGER", nullable: false),
                     Label = table.Column<string>(type: "TEXT", nullable: true),
                     Width = table.Column<int>(type: "INTEGER", nullable: false),
                     Height = table.Column<int>(type: "INTEGER", nullable: false),
@@ -73,7 +74,7 @@ namespace IMApi.Migrations
                 columns: table => new
                 {
                     ConveretedFilePath = table.Column<string>(type: "TEXT", nullable: false),
-                    FileMetaDataWebURL = table.Column<string>(type: "TEXT", nullable: true),
+                    FileMetaDataWebURL = table.Column<string>(type: "TEXT", nullable: false),
                     ConversionConveretedFilePath = table.Column<string>(type: "TEXT", nullable: true),
                     OriginalFileFilePath = table.Column<string>(type: "TEXT", nullable: true)
                 },
@@ -89,7 +90,8 @@ namespace IMApi.Migrations
                         name: "FK_ConvertedFiles_FileMeta_FileMetaDataWebURL",
                         column: x => x.FileMetaDataWebURL,
                         principalTable: "FileMeta",
-                        principalColumn: "WebURL");
+                        principalColumn: "WebURL",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_ConvertedFiles_OriginalFiles_OriginalFileFilePath",
                         column: x => x.OriginalFileFilePath,

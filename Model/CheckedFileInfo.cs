@@ -69,7 +69,7 @@ public record ConversionInfo
     public string ConversionName { get; init; } = null!;
     public string FileType { get; init; } = "png";
     public ConversionType Type { get; init; }
-    public string? Label { get; init; }
+    public string? Label { get; set; }
     public int Width { get; init; }
     public int Height { get; init; }
     public string BackgroundColor { get; init; } = "#00000000"; // MagickColor.Transparent

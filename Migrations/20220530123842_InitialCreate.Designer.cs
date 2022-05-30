@@ -10,7 +10,7 @@ using Protronic.CeckedFileInfo;
 namespace IMApi.Migrations
 {
     [DbContext(typeof(CheckedFileContext))]
-    [Migration("20220517064606_InitialCreate")]
+    [Migration("20220530123842_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -29,6 +29,7 @@ namespace IMApi.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ConversionName")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("FileType")
@@ -44,7 +45,7 @@ namespace IMApi.Migrations
                     b.Property<string>("OriginalFileFilePath")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("Type")
+                    b.Property<int>("Type")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("Width")
@@ -66,6 +67,7 @@ namespace IMApi.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("FileMetaDataWebURL")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("OriginalFileFilePath")
@@ -88,6 +90,7 @@ namespace IMApi.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Artikelnummer")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<uint>("FileCrc")
@@ -97,9 +100,11 @@ namespace IMApi.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("FileName")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("FileType")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("lang")
@@ -116,6 +121,7 @@ namespace IMApi.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("FileMetaDataWebURL")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("FilePath");
@@ -140,7 +146,9 @@ namespace IMApi.Migrations
 
                     b.HasOne("Protronic.CeckedFileInfo.FileMeta", "FileMetaData")
                         .WithMany()
-                        .HasForeignKey("FileMetaDataWebURL");
+                        .HasForeignKey("FileMetaDataWebURL")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Protronic.CeckedFileInfo.OriginalFile", null)
                         .WithMany("ConvertedFiles")
@@ -155,7 +163,9 @@ namespace IMApi.Migrations
                 {
                     b.HasOne("Protronic.CeckedFileInfo.FileMeta", "FileMetaData")
                         .WithMany()
-                        .HasForeignKey("FileMetaDataWebURL");
+                        .HasForeignKey("FileMetaDataWebURL")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("FileMetaData");
                 });

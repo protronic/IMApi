@@ -97,7 +97,14 @@ public class IMController : Controller
                 if (originalFile != null)
                 {
                     var c = Util.getLabeledConversionInfo(label);
-                    
+                    var removeFiles = false;
+                    originalFile.Conversions.ForEach(c => {
+                        if (c.Label != label)
+                          removeFiles = true;
+                        c.Label = label;  
+                    });
+                    if(removeFiles)
+                      originalFile.ConvertedFiles.Clear();
                 }
                 else
                 {
