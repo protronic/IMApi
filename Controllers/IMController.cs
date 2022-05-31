@@ -63,7 +63,7 @@ public class IMController : Controller
         var del = db.ConvertedFiles.Include(cf => cf.FileMetaData);
         db.FileMeta.RemoveRange(del.Select(cf => cf.FileMetaData));
         db.ConvertedFiles.RemoveRange(del);
-        db.SaveChanges();        
+        db.SaveChanges();
     }
 
     [HttpPost(Name = "PostProcessImages")]
@@ -81,7 +81,7 @@ public class IMController : Controller
     }
 
     [HttpPost("{imageName}", Name = "PostProcessLabeledImages")]
-    public void ProcessImages(string imageName, string? label)
+    public void ProcessImages(string imageName, string? label, string? conversionName)
     {
         // context.HttpContext.Request.Body;  
         // HttpContext.Request.Body;
@@ -97,12 +97,15 @@ public class IMController : Controller
                     var removeFiles = false;
                     originalFile.Conversions.ForEach(c =>
                     {
-                        if (c.Label != label)
-                            removeFiles = true;
-                        c.Label = label;
+                        if (String.IsNullOrEmpty(conversionName) || c.ConversionName == conversionName)
+                        {
+                            if (c.Label != label)
+                                removeFiles = true;
+                            c.Label = label;
+                        }
                     });
                     if (removeFiles)
-                        removeConvertedFileInfo(originalFile, "label has changed");
+                        removeConvertedFileInfo(originalFile, "label has changed", conversionName);
                 }
                 else
                 {
@@ -114,10 +117,11 @@ public class IMController : Controller
         db.SaveChanges();
     }
 
-    private void removeConvertedFileInfo(OriginalFile o, String reason)
+    private void removeConvertedFileInfo(OriginalFile o, string reason, string? conversionName = null)
     {
-        logger.LogInformation("drop ConvertedFiles for " + o.FileMetaData.FileName + " caused by: " + reason );
-        var del = db.ConvertedFiles.Include(cf => cf.FileMetaData).Where(cf => cf.FileMetaData.Artikelnummer == o.FileMetaData.Artikelnummer);
+        logger.LogInformation("drop ConvertedFiles for " + o.FileMetaData.FileName + " " + conversionName + " caused by: " + reason);
+        var del = db.ConvertedFiles.Include(cf => cf.FileMetaData)
+        .Where(cf => cf.FileMetaData.Artikelnummer == o.FileMetaData.Artikelnummer && (String.IsNullOrEmpty(conversionName) || cf.Conversion.ConversionName == conversionName));
         db.FileMeta.RemoveRange(del.Select(cf => cf.FileMetaData));
         db.ConvertedFiles.RemoveRange(del);
         o.ConvertedFiles.Clear();
@@ -179,7 +183,7 @@ public class IMController : Controller
                 Artikelnummer = num
             }
         };
-        
+
         if (originalFile.FileMetaData.FileCrc != crc)
             removeConvertedFileInfo(originalFile, "originalFile has changed");
 
