@@ -8,10 +8,10 @@ namespace Protronic.CeckedFileInfo;
 
 public class CheckedFileContext : DbContext
 {
-    public DbSet<OriginalFile> OriginalFiles { get; set; }
-    public DbSet<ConvertedFile> ConvertedFiles { get; set; }
-    public DbSet<ConversionInfo> Conversions { get; set; }
-
+    public DbSet<OriginalFile> OriginalFiles { get; set; } = null!;
+    public DbSet<ConvertedFile> ConvertedFiles { get; set; } = null!;
+    public DbSet<ConversionInfo> Conversions { get; set; } = null!;    
+    public DbSet<FileMeta> FileMeta { get; set; } = null!;
 
     public string DbPath { get; }
 
@@ -19,9 +19,6 @@ public class CheckedFileContext : DbContext
     {
         // var folder = Environment.SpecialFolder.LocalApplicationData;        
         DbPath = System.IO.Path.Join("./wwwroot/", "CeckedFileInfo.db");
-        _ = this.OriginalFiles ?? throw new NullReferenceException(nameof(OriginalFiles));
-        _ = this.ConvertedFiles ?? throw new NullReferenceException(nameof(ConvertedFiles));
-        _ = this.Conversions ?? throw new NullReferenceException(nameof(Conversions));
     }
 
     // The following configures EF to create a Sqlite database file in the

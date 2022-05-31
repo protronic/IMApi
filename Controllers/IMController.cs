@@ -96,15 +96,21 @@ public class IMController : Controller
                 var originalFile = ofs.SingleOrDefault(c => c.FileMetaData.FileName == name);
                 if (originalFile != null)
                 {
-                    var c = Util.getLabeledConversionInfo(label);
                     var removeFiles = false;
-                    originalFile.Conversions.ForEach(c => {
+                    originalFile.Conversions.ForEach(c =>
+                    {
                         if (c.Label != label)
-                          removeFiles = true;
-                        c.Label = label;  
+                            removeFiles = true;
+                        c.Label = label;
                     });
-                    if(removeFiles)
-                      originalFile.ConvertedFiles.Clear();
+                    if (removeFiles)
+                    {
+                        var del = db.ConvertedFiles.Include(cf => cf.FileMetaData).Where(cf => cf.FileMetaData.Artikelnummer == num);
+                        db.FileMeta.RemoveRange(del.Select(cf => cf.FileMetaData));
+                        db.ConvertedFiles.RemoveRange(del);
+                        originalFile.ConvertedFiles.Clear();
+                        db.SaveChanges();
+                    }
                 }
                 else
                 {
