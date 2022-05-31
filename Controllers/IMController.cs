@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
 using ImageMagick;
 using Protronic.CeckedFileInfo;
 
@@ -60,12 +59,11 @@ public class IMController : Controller
     [HttpDelete(Name = "DeleteConvertedFiles")]
     public void DeleteConvertedFiles()
     {
-        var rows = from o in db.ConvertedFiles select o;
-        foreach (var row in rows)
-        {
-            db.ConvertedFiles.Remove(row);
-        }
-        db.SaveChanges();
+
+        var del = db.ConvertedFiles.Include(cf => cf.FileMetaData);
+        db.FileMeta.RemoveRange(del.Select(cf => cf.FileMetaData));
+        db.ConvertedFiles.RemoveRange(del);
+        db.SaveChanges();        
     }
 
     [HttpPost(Name = "PostProcessImages")]
@@ -104,13 +102,7 @@ public class IMController : Controller
                         c.Label = label;
                     });
                     if (removeFiles)
-                    {
-                        var del = db.ConvertedFiles.Include(cf => cf.FileMetaData).Where(cf => cf.FileMetaData.Artikelnummer == num);
-                        db.FileMeta.RemoveRange(del.Select(cf => cf.FileMetaData));
-                        db.ConvertedFiles.RemoveRange(del);
-                        originalFile.ConvertedFiles.Clear();
-                        db.SaveChanges();
-                    }
+                        removeConvertedFileInfo(originalFile, "label has changed");
                 }
                 else
                 {
@@ -119,6 +111,16 @@ public class IMController : Controller
                 processConverts(originalFile);
             }
         };
+        db.SaveChanges();
+    }
+
+    private void removeConvertedFileInfo(OriginalFile o, String reason)
+    {
+        logger.LogInformation("drop ConvertedFiles for " + o.FileMetaData.FileName + " caused by: " + reason );
+        var del = db.ConvertedFiles.Include(cf => cf.FileMetaData).Where(cf => cf.FileMetaData.Artikelnummer == o.FileMetaData.Artikelnummer);
+        db.FileMeta.RemoveRange(del.Select(cf => cf.FileMetaData));
+        db.ConvertedFiles.RemoveRange(del);
+        o.ConvertedFiles.Clear();
         db.SaveChanges();
     }
 
@@ -177,6 +179,10 @@ public class IMController : Controller
                 Artikelnummer = num
             }
         };
+        
+        if (originalFile.FileMetaData.FileCrc != crc)
+            removeConvertedFileInfo(originalFile, "originalFile has changed");
+
         originalFile.FileMetaData.FileCrc = crc;
         originalFile.FileMetaData.FileType = type;
         originalFile.FileMetaData.FileLength = file.Length;
@@ -185,7 +191,7 @@ public class IMController : Controller
             conversions.Where(x => !originalFile.Conversions.Any(y => y.ConveretedFilePath == x.ConveretedFilePath)));
 
         originalFile.FileMetaData.WebURL = new Uri("/img/orig/" + Path.GetFileName(file.PhysicalPath), UriKind.Relative);
-        Util.InsertOrUpdate(originalFile, originalFile, db, logger);
+        Util.AddOrUpdate(db, originalFile, logger);
         return originalFile;
     }
 
