@@ -87,7 +87,7 @@ public class IMController : Controller
         // HttpContext.Request.Body;
         foreach (var f in this.originalRepo.GetDirectoryContents("").Where(f => f.Name == imageName))
         {
-            logger.LogInformation($"FileName: {f.Name} | Label: {label}");
+            logger.LogInformation($"FileName: {f.Name} | Label: {label} | ConversionName: {conversionName}");
             if (GetFormatInformation(f) != null)
             {
                 Util.checkFile(f, logger, out string name, out string num, out Lang lang, out string type, out uint crc);
@@ -109,7 +109,7 @@ public class IMController : Controller
                 }
                 else
                 {
-                    originalFile = checkFileHasChanged(f, label);
+                    originalFile = checkFileHasChanged(f, label, conversionName);
                 }
                 processConverts(originalFile);
             }
@@ -144,6 +144,7 @@ public class IMController : Controller
             if (convertedFile != null && !convertedRepo.GetFileInfo(Util.getFileName(convertedFile)).Exists)
             {
                 originalFile.ConvertedFiles.Remove(convertedFile);
+                removeConvertedFileInfo(originalFile, "file not existis", con.ConversionName);
                 convertedFile = null;
             }
 
@@ -169,10 +170,11 @@ public class IMController : Controller
         }
     }
 
-    private OriginalFile checkFileHasChanged(IFileInfo file, string? label = null)
+    private OriginalFile checkFileHasChanged(IFileInfo file, string? label = null, string? conversionName = null)
     {
         Util.checkFile(file, logger, out string name, out string num, out Lang lang, out string type, out uint crc);
         var c = String.IsNullOrEmpty(label) ? Util.DEFAULT_CONVERSIONS : Util.getLabeledConversionInfo(label);
+        c = c.Where(con => (String.IsNullOrEmpty(conversionName) || con.ConversionName == conversionName)).ToArray();
         var conversions = new List<ConversionInfo>(c).Select(ci => ci.getInstance(name)).ToList();
         var originalFile = ofs.SingleOrDefault(c => c.FileMetaData.FileName == name) ?? new OriginalFile
         {
@@ -191,8 +193,7 @@ public class IMController : Controller
         originalFile.FileMetaData.FileType = type;
         originalFile.FileMetaData.FileLength = file.Length;
 
-        originalFile.Conversions.AddRange(
-            conversions.Where(x => !originalFile.Conversions.Any(y => y.ConveretedFilePath == x.ConveretedFilePath)));
+        originalFile.Conversions.AddRange(conversions);
 
         originalFile.FileMetaData.WebURL = new Uri("/img/orig/" + Path.GetFileName(file.PhysicalPath), UriKind.Relative);
         Util.AddOrUpdate(db, originalFile, logger);
