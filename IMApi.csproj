@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Watch Remove="wwwroot\**\*" />
+    <Watch Remove=".\wwwroot\**\*" />
   </ItemGroup>
 
 </Project>

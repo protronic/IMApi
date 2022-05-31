@@ -83,7 +83,7 @@ public class IMController : Controller
     }
 
     [HttpPost("{imageName}", Name = "PostProcessLabeledImages")]
-    public void ProcessImages(string imageName, string label = "")
+    public void ProcessImages(string imageName, string? label)
     {
         // context.HttpContext.Request.Body;  
         // HttpContext.Request.Body;
@@ -148,6 +148,7 @@ public class IMController : Controller
                         FileType = type,
                         FileCrc = crc,
                         FileLength = convertedFileInfo.Length,
+                        Artikelnummer = num,
                         WebURL = new Uri("/img/out/" + con.ConversionName + "/" + fileName, UriKind.Relative)
                     },
                     Conversion = con,

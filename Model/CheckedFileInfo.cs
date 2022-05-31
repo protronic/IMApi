@@ -152,7 +152,7 @@ static public class Util
     //     return ci;
     // }
 
-    public static ConversionInfo[] getLabeledConversionInfo(string newLabel)
+    public static ConversionInfo[] getLabeledConversionInfo(string? newLabel)
     {
         return DEFAULT_CONVERSIONS.Select(v => new ConversionInfo
         {
