@@ -17,7 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Watch Remove=".\wwwroot\**\*" />
+    <!-- Exclude all Content items from being watched. -->
+    <Content Update="@(Content)" Watch="false" />
   </ItemGroup>
 
 </Project>
