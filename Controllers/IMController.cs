@@ -192,8 +192,9 @@ public class IMController : Controller
         originalFile.FileMetaData.FileCrc = crc;
         originalFile.FileMetaData.FileType = type;
         originalFile.FileMetaData.FileLength = file.Length;
-
-        originalFile.Conversions.AddRange(conversions);
+        
+        originalFile.Conversions.AddRange(
+            conversions.Where(x => !originalFile.Conversions.Any(y => y.ConveretedFilePath == x.ConveretedFilePath)));
 
         originalFile.FileMetaData.WebURL = new Uri("/img/orig/" + Path.GetFileName(file.PhysicalPath), UriKind.Relative);
         Util.AddOrUpdate(db, originalFile, logger);
