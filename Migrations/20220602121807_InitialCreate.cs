@@ -32,7 +32,7 @@ namespace IMApi.Migrations
                 columns: table => new
                 {
                     FilePath = table.Column<string>(type: "TEXT", nullable: false),
-                    FileMetaDataWebURL = table.Column<string>(type: "TEXT", nullable: false)
+                    FileMetaDataWebURL = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -41,8 +41,7 @@ namespace IMApi.Migrations
                         name: "FK_OriginalFiles_FileMeta_FileMetaDataWebURL",
                         column: x => x.FileMetaDataWebURL,
                         principalTable: "FileMeta",
-                        principalColumn: "WebURL",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "WebURL");
                 });
 
             migrationBuilder.CreateTable(

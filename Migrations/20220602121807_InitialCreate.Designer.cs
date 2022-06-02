@@ -10,7 +10,7 @@ using Protronic.CeckedFileInfo;
 namespace IMApi.Migrations
 {
     [DbContext(typeof(CheckedFileContext))]
-    [Migration("20220530123842_InitialCreate")]
+    [Migration("20220602121807_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -121,7 +121,6 @@ namespace IMApi.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("FileMetaDataWebURL")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("FilePath");
@@ -163,9 +162,7 @@ namespace IMApi.Migrations
                 {
                     b.HasOne("Protronic.CeckedFileInfo.FileMeta", "FileMetaData")
                         .WithMany()
-                        .HasForeignKey("FileMetaDataWebURL")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("FileMetaDataWebURL");
 
                     b.Navigation("FileMetaData");
                 });

@@ -118,7 +118,6 @@ namespace IMApi.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("FileMetaDataWebURL")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("FilePath");
@@ -160,9 +159,7 @@ namespace IMApi.Migrations
                 {
                     b.HasOne("Protronic.CeckedFileInfo.FileMeta", "FileMetaData")
                         .WithMany()
-                        .HasForeignKey("FileMetaDataWebURL")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("FileMetaDataWebURL");
 
                     b.Navigation("FileMetaData");
                 });

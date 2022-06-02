@@ -95,22 +95,20 @@ public class IMController : Controller
                 if (originalFile != null)
                 {
                     var removeFiles = false;
-                    originalFile.Conversions.ForEach(c =>
+                    var c = originalFile.Conversions.GetEnumerator();                    
+                    while ( c.MoveNext())
                     {
-                        if (String.IsNullOrEmpty(conversionName) || c.ConversionName == conversionName)
+                        if (String.IsNullOrEmpty(conversionName) || c.Current.ConversionName == conversionName)
                         {
-                            if (c.Label != label)
+                            if (c.Current.Label != label)
                                 removeFiles = true;
-                            c.Label = label;
+                            c.Current.Label = label;
                         }
-                    });
+                    };
                     if (removeFiles)
                         removeConvertedFileInfo(originalFile, "label has changed", conversionName);
                 }
-                else
-                {
-                    originalFile = checkFileHasChanged(f, label, conversionName);
-                }
+                originalFile = checkFileHasChanged(f, label, conversionName);      
                 processConverts(originalFile);
             }
         };
@@ -192,9 +190,8 @@ public class IMController : Controller
         originalFile.FileMetaData.FileCrc = crc;
         originalFile.FileMetaData.FileType = type;
         originalFile.FileMetaData.FileLength = file.Length;
-        
-        originalFile.Conversions.AddRange(
-            conversions.Where(x => !originalFile.Conversions.Any(y => y.ConveretedFilePath == x.ConveretedFilePath)));
+
+        originalFile.Conversions.UnionWith(conversions);
 
         originalFile.FileMetaData.WebURL = new Uri("/img/orig/" + Path.GetFileName(file.PhysicalPath), UriKind.Relative);
         Util.AddOrUpdate(db, originalFile, logger);
@@ -259,7 +256,6 @@ public class IMController : Controller
 
             images.Add(shadow);
             images.Add(image.Clone());
-
 
             using (var merged = images.Merge()) // -layers merge
             {

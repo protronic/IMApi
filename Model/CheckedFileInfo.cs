@@ -10,7 +10,7 @@ public class CheckedFileContext : DbContext
 {
     public DbSet<OriginalFile> OriginalFiles { get; set; } = null!;
     public DbSet<ConvertedFile> ConvertedFiles { get; set; } = null!;
-    public DbSet<ConversionInfo> Conversions { get; set; } = null!;    
+    public DbSet<ConversionInfo> Conversions { get; set; } = null!;
     public DbSet<FileMeta> FileMeta { get; set; } = null!;
 
     public string DbPath { get; }
@@ -48,6 +48,11 @@ public record FileMeta
     public string FileType { get; set; } = null!;
     public uint FileCrc { get; set; }
     public long FileLength { get; set; }
+
+    public override int GetHashCode()
+    {
+        return WebURL.GetHashCode();
+    }
 }
 
 public record OriginalFile
@@ -55,8 +60,9 @@ public record OriginalFile
     [Key]
     public string FilePath { get; init; } = null!;
     public FileMeta FileMetaData { get; set; } = null!;
-    public List<ConversionInfo> Conversions { get; } = new();
-    public List<ConvertedFile> ConvertedFiles { get; } = new();
+    public ISet<ConversionInfo> Conversions { get; } = new HashSet<ConversionInfo>(new Util.ConversionInfoComparer());
+    public ISet<ConvertedFile> ConvertedFiles { get; } = new HashSet<ConvertedFile>(new Util.ConvertedFileComparer());
+
 }
 
 public record ConversionInfo
@@ -77,7 +83,6 @@ public record ConversionInfo
         cp.ConveretedFilePath = cp.ConversionName + "/" + newName + (String.IsNullOrEmpty(this.Label) ? ("_" + this.Label) : "") + "." + cp.FileType;
         return cp;
     }
-
 }
 
 public record ConvertedFile
@@ -86,6 +91,7 @@ public record ConvertedFile
     public string ConveretedFilePath { get; init; } = null!;
     public FileMeta FileMetaData { get; set; } = null!;
     public ConversionInfo Conversion { get; init; } = null!;
+
 }
 
 public class WrongFilenameFormatException : ArgumentException
@@ -95,6 +101,37 @@ public class WrongFilenameFormatException : ArgumentException
 
 static public class Util
 {
+    public class ConversionInfoComparer : IEqualityComparer<ConversionInfo>
+    {
+        public bool Equals(ConversionInfo? x, ConversionInfo? y)
+        {
+            _ = x ?? throw new ArgumentNullException(nameof(x));
+            _ = y ?? throw new ArgumentNullException(nameof(y));
+            return x.ConveretedFilePath.Equals(y.ConveretedFilePath, StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        public int GetHashCode(ConversionInfo c)
+        {
+            return c.ConveretedFilePath.GetHashCode();
+        }
+    }
+
+
+    public class ConvertedFileComparer : IEqualityComparer<ConvertedFile>
+    {
+        public bool Equals(ConvertedFile? x, ConvertedFile? y)
+        {
+            _ = x ?? throw new ArgumentNullException(nameof(x));
+            _ = y ?? throw new ArgumentNullException(nameof(y));
+            return x.ConveretedFilePath.Equals(y.ConveretedFilePath, StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        public int GetHashCode(ConvertedFile c)
+        {
+            return c.ConveretedFilePath.GetHashCode();
+        }
+    }
+
     public static ConversionInfo[] DEFAULT_CONVERSIONS = {
         new ConversionInfo {
             ConversionName = "web",
@@ -215,7 +252,7 @@ static public class Util
     }
 
 
-    public static void InsertOrUpdate<T, T2>(this T entity, T2 updateEntity, DbContext context,  ILogger logger)
+    public static void InsertOrUpdate<T, T2>(this T entity, T2 updateEntity, DbContext context, ILogger logger)
     where T : class
     where T2 : class
     {
@@ -224,7 +261,7 @@ static public class Util
         {
             if (context.Set<T2>().Any(t => t == updateEntity))
             {
-                context.Set<T2>().Update(updateEntity);                
+                context.Set<T2>().Update(updateEntity);
             }
             else
             {
