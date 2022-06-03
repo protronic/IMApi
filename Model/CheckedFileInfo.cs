@@ -60,8 +60,8 @@ public record OriginalFile
     [Key]
     public string FilePath { get; init; } = null!;
     public FileMeta FileMetaData { get; set; } = null!;
-    public ISet<ConversionInfo> Conversions { get; } = new HashSet<ConversionInfo>(new Util.ConversionInfoComparer());
-    public ISet<ConvertedFile> ConvertedFiles { get; } = new HashSet<ConvertedFile>(new Util.ConvertedFileComparer());
+    public ISet<ConversionInfo> Conversions { get; } = new HashSet<ConversionInfo>(ConversionInfo.Comparer);
+    public ISet<ConvertedFile> ConvertedFiles { get; } = new HashSet<ConvertedFile>(ConvertedFile.Comparer);
 
 }
 
@@ -80,28 +80,11 @@ public record ConversionInfo
     public ConversionInfo getInstance(string newName)
     {
         var cp = (ConversionInfo)this.MemberwiseClone();
-        cp.ConveretedFilePath = cp.ConversionName + "/" + newName + (String.IsNullOrEmpty(this.Label) ? ("_" + this.Label) : "") + "." + cp.FileType;
+        cp.ConveretedFilePath = cp.ConversionName + "/" + newName + "." + cp.FileType;
         return cp;
     }
-}
 
-public record ConvertedFile
-{
-    [Key]
-    public string ConveretedFilePath { get; init; } = null!;
-    public FileMeta FileMetaData { get; set; } = null!;
-    public ConversionInfo Conversion { get; init; } = null!;
-
-}
-
-public class WrongFilenameFormatException : ArgumentException
-{
-    public WrongFilenameFormatException(string? message) : base(message) { }
-}
-
-static public class Util
-{
-    public class ConversionInfoComparer : IEqualityComparer<ConversionInfo>
+    private sealed class ConversionInfoComparer : IEqualityComparer<ConversionInfo>
     {
         public bool Equals(ConversionInfo? x, ConversionInfo? y)
         {
@@ -116,14 +99,26 @@ static public class Util
         }
     }
 
+    public static IEqualityComparer<ConversionInfo> Comparer { get; } = new ConversionInfoComparer();
+}
 
-    public class ConvertedFileComparer : IEqualityComparer<ConvertedFile>
+public record ConvertedFile
+{
+    [Key]
+    public string ConveretedFilePath { get; init; } = null!;
+    public FileMeta FileMetaData { get; set; } = null!;
+    public ConversionInfo Conversion { get; init; } = null!;
+
+    private sealed class ConvertedFileComparer : IEqualityComparer<ConvertedFile>
     {
         public bool Equals(ConvertedFile? x, ConvertedFile? y)
         {
             _ = x ?? throw new ArgumentNullException(nameof(x));
             _ = y ?? throw new ArgumentNullException(nameof(y));
-            return x.ConveretedFilePath.Equals(y.ConveretedFilePath, StringComparison.InvariantCultureIgnoreCase);
+            var ret = x.ConveretedFilePath.Equals(y.ConveretedFilePath, StringComparison.InvariantCultureIgnoreCase);
+            // if (x.Conversion != null && y.Conversion != null)
+            //     ret &= string.Equals(x.Conversion.Label, y.Conversion.Label);
+            return ret;
         }
 
         public int GetHashCode(ConvertedFile c)
@@ -132,6 +127,16 @@ static public class Util
         }
     }
 
+    public static IEqualityComparer<ConvertedFile> Comparer { get; } = new ConvertedFileComparer();
+}
+
+public class WrongFilenameFormatException : ArgumentException
+{
+    public WrongFilenameFormatException(string? message) : base(message) { }
+}
+
+static public class Util
+{
     public static ConversionInfo[] DEFAULT_CONVERSIONS = {
         new ConversionInfo {
             ConversionName = "web",
@@ -237,37 +242,6 @@ static public class Util
 
             default:
                 throw new ArgumentOutOfRangeException();
-        }
-        logger.LogInformation($"EntityState: {entry.State}");
-    }
-
-    public static void InsertOrUpdateRange<T, T2>(this T entity, List<T2> updateEntity, DbContext context, ILogger logger)
-        where T : class
-        where T2 : class
-    {
-        foreach (var e in updateEntity)
-        {
-            context.Set<T2>().InsertOrUpdate(e, context, logger);
-        }
-    }
-
-
-    public static void InsertOrUpdate<T, T2>(this T entity, T2 updateEntity, DbContext context, ILogger logger)
-    where T : class
-    where T2 : class
-    {
-        var entry = context.Entry(updateEntity);
-        if (entry.State == EntityState.Detached)
-        {
-            if (context.Set<T2>().Any(t => t == updateEntity))
-            {
-                context.Set<T2>().Update(updateEntity);
-            }
-            else
-            {
-                context.Set<T2>().Add(updateEntity);
-            }
-
         }
         logger.LogInformation($"EntityState: {entry.State}");
     }

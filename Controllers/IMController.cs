@@ -95,8 +95,8 @@ public class IMController : Controller
                 if (originalFile != null)
                 {
                     var removeFiles = false;
-                    var c = originalFile.Conversions.GetEnumerator();                    
-                    while ( c.MoveNext())
+                    var c = originalFile.Conversions.GetEnumerator();
+                    while (c.MoveNext())
                     {
                         if (String.IsNullOrEmpty(conversionName) || c.Current.ConversionName == conversionName)
                         {
@@ -108,7 +108,8 @@ public class IMController : Controller
                     if (removeFiles)
                         removeConvertedFileInfo(originalFile, "label has changed", conversionName);
                 }
-                originalFile = checkFileHasChanged(f, label, conversionName);      
+                else
+                    originalFile = checkFileHasChanged(f, label, conversionName);
                 processConverts(originalFile);
             }
         };
@@ -122,7 +123,6 @@ public class IMController : Controller
         .Where(cf => cf.FileMetaData.Artikelnummer == o.FileMetaData.Artikelnummer && (String.IsNullOrEmpty(conversionName) || cf.Conversion.ConversionName == conversionName));
         db.FileMeta.RemoveRange(del.Select(cf => cf.FileMetaData));
         db.ConvertedFiles.RemoveRange(del);
-        o.ConvertedFiles.Clear();
         db.SaveChanges();
     }
 
@@ -138,7 +138,7 @@ public class IMController : Controller
 
         foreach (ConversionInfo con in originalFile.Conversions)
         {
-            var convertedFile = originalFile.ConvertedFiles.Where(c => con.Equals(c.Conversion)).SingleOrDefault();
+            var convertedFile = originalFile.ConvertedFiles.Where(c => ConversionInfo.Comparer.Equals(c.Conversion, con)).SingleOrDefault();
             if (convertedFile != null && !convertedRepo.GetFileInfo(Util.getFileName(convertedFile)).Exists)
             {
                 originalFile.ConvertedFiles.Remove(convertedFile);
