@@ -17,7 +17,7 @@ namespace IMApi.Migrations
                     WebURL = table.Column<string>(type: "TEXT", nullable: false),
                     FileName = table.Column<string>(type: "TEXT", nullable: false),
                     Artikelnummer = table.Column<string>(type: "TEXT", nullable: false),
-                    lang = table.Column<int>(type: "INTEGER", nullable: false),
+                    Language = table.Column<int>(type: "INTEGER", nullable: false),
                     FileType = table.Column<string>(type: "TEXT", nullable: false),
                     FileCrc = table.Column<uint>(type: "INTEGER", nullable: false),
                     FileLength = table.Column<long>(type: "INTEGER", nullable: false)
@@ -53,6 +53,7 @@ namespace IMApi.Migrations
                     FileType = table.Column<string>(type: "TEXT", nullable: false),
                     Type = table.Column<int>(type: "INTEGER", nullable: false),
                     Label = table.Column<string>(type: "TEXT", nullable: true),
+                    Language = table.Column<int>(type: "INTEGER", nullable: false),
                     Width = table.Column<int>(type: "INTEGER", nullable: false),
                     Height = table.Column<int>(type: "INTEGER", nullable: false),
                     BackgroundColor = table.Column<string>(type: "TEXT", nullable: false),

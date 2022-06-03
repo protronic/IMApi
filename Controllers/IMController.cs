@@ -173,14 +173,14 @@ public class IMController : Controller
         Util.checkFile(file, logger, out string name, out string num, out Lang lang, out string type, out uint crc);
         var c = String.IsNullOrEmpty(label) ? Util.DEFAULT_CONVERSIONS : Util.getLabeledConversionInfo(label);
         c = c.Where(con => (String.IsNullOrEmpty(conversionName) || con.ConversionName == conversionName)).ToArray();
-        var conversions = new List<ConversionInfo>(c).Select(ci => ci.getInstance(name)).ToList();
         var originalFile = ofs.SingleOrDefault(c => c.FileMetaData.FileName == name) ?? new OriginalFile
         {
             FilePath = file.PhysicalPath,
             FileMetaData = new FileMeta
             {
                 FileName = name,
-                Artikelnummer = num
+                Artikelnummer = num,
+                Language = lang
             }
         };
 
@@ -191,6 +191,8 @@ public class IMController : Controller
         originalFile.FileMetaData.FileType = type;
         originalFile.FileMetaData.FileLength = file.Length;
 
+        c = c.Where(con => lang == Lang.MULTI || lang == con.Language).ToArray();
+        var conversions = new List<ConversionInfo>(c).Select(ci => ci.getInstance(name)).ToList();
         originalFile.Conversions.UnionWith(conversions);
 
         originalFile.FileMetaData.WebURL = new Uri("/img/orig/" + Path.GetFileName(file.PhysicalPath), UriKind.Relative);
@@ -202,7 +204,7 @@ public class IMController : Controller
     {
         IFileInfo outfile;
         var srcFilePath = originalRepo.GetFileInfo(srcfile).PhysicalPath;
-        var conversionFilePath = Path.Combine(con.ConversionName, Path.GetFileNameWithoutExtension(srcFilePath)) + "." + con.FileType;
+        var conversionFilePath = con.ConveretedFilePath;
         outfile = convertedRepo.GetFileInfo(conversionFilePath);
         var dir = Path.GetDirectoryName(outfile.PhysicalPath);
         if (dir != null) Directory.CreateDirectory(dir);

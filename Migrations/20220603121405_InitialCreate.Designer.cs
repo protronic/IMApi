@@ -10,7 +10,7 @@ using Protronic.CeckedFileInfo;
 namespace IMApi.Migrations
 {
     [DbContext(typeof(CheckedFileContext))]
-    [Migration("20220602121807_InitialCreate")]
+    [Migration("20220603121405_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -41,6 +41,9 @@ namespace IMApi.Migrations
 
                     b.Property<string>("Label")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("Language")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("OriginalFileFilePath")
                         .HasColumnType("TEXT");
@@ -107,7 +110,7 @@ namespace IMApi.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("lang")
+                    b.Property<int>("Language")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("WebURL");

@@ -34,7 +34,7 @@ public enum ConversionType
 
 public enum Lang
 {
-    DE, EN
+    MULTI, DE, EN
 }
 
 
@@ -44,7 +44,7 @@ public record FileMeta
     public Uri WebURL { get; set; } = null!;
     public string FileName { get; init; } = null!;
     public string Artikelnummer { get; init; } = null!;
-    public Lang lang { get; init; } = Lang.DE;
+    public Lang Language { get; init; } = Lang.MULTI;
     public string FileType { get; set; } = null!;
     public uint FileCrc { get; set; }
     public long FileLength { get; set; }
@@ -73,6 +73,7 @@ public record ConversionInfo
     public string FileType { get; init; } = "png";
     public ConversionType Type { get; init; }
     public string? Label { get; set; }
+    public Lang Language { get; init; } = Lang.DE;
     public int Width { get; init; }
     public int Height { get; init; }
     public string BackgroundColor { get; init; } = "#00000000"; // MagickColor.Transparent
@@ -80,7 +81,7 @@ public record ConversionInfo
     public ConversionInfo getInstance(string newName)
     {
         var cp = (ConversionInfo)this.MemberwiseClone();
-        cp.ConveretedFilePath = cp.ConversionName + "/" + newName + "." + cp.FileType;
+        cp.ConveretedFilePath = cp.ConversionName + "/" + newName + "_" + cp.Language + "." + cp.FileType;
         return cp;
     }
 
@@ -146,6 +147,14 @@ static public class Util
             Height = 500,
             BackgroundColor = "#FFFFFFFF",
         },
+         new ConversionInfo {
+            ConversionName = "web",
+            Type = ConversionType.web,
+            Label = string.Empty,
+            Width = 500,
+            Height = 500,
+            BackgroundColor = "#FFFFFFFF",
+        },
         new ConversionInfo {
             ConversionName = "thumb",
             Type = ConversionType.thumb,
@@ -162,11 +171,27 @@ static public class Util
             Height = 100
         },
         new ConversionInfo {
+            ConversionName = "100x100",
+            Type = ConversionType._100x100,
+            Label = string.Empty,
+            Width = 100,
+            Height = 100,
+            Language = Lang.EN
+        },
+        new ConversionInfo {
             ConversionName = "200x200",
             Type = ConversionType._200x200,
             Label = string.Empty,
             Width = 200,
             Height = 200
+        },
+        new ConversionInfo {
+            ConversionName = "200x200",
+            Type = ConversionType._200x200,
+            Label = string.Empty,
+            Width = 200,
+            Height = 200,
+            Language = Lang.EN
         },
         new ConversionInfo {
             ConversionName = "2000x2000",
@@ -210,7 +235,7 @@ static public class Util
         if (match.Success)
         {
             artikelnummer = match.Groups["num"].Value;
-            lang = match.Groups["lang"].Success ? Enum.Parse<Lang>(match.Groups["lang"].Value.ToUpper()) : Lang.DE;
+            lang = match.Groups["lang"].Success ? Enum.Parse<Lang>(match.Groups["lang"].Value.ToUpper()) : Lang.MULTI;
             name = match.Groups["num"].Value;
             name += match.Groups["lang"].Success ? "_" + match.Groups["lang"].Value : string.Empty;
             name += match.Groups["index"].Success ? "_" + match.Groups["index"].Value : string.Empty;
