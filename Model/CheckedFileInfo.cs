@@ -81,7 +81,7 @@ public record ConversionInfo
     public ConversionInfo getInstance(string newName)
     {
         var cp = (ConversionInfo)this.MemberwiseClone();
-        cp.ConveretedFilePath = cp.ConversionName + "/" + newName + "_" + cp.Language + "." + cp.FileType;
+        cp.ConveretedFilePath = cp.Language + "/" + cp.ConversionName + "/" + newName + "." + cp.FileType;
         return cp;
     }
 
@@ -154,6 +154,7 @@ static public class Util
             Width = 500,
             Height = 500,
             BackgroundColor = "#FFFFFFFF",
+            Language = Lang.EN
         },
         new ConversionInfo {
             ConversionName = "thumb",
@@ -237,7 +238,7 @@ static public class Util
             artikelnummer = match.Groups["num"].Value;
             lang = match.Groups["lang"].Success ? Enum.Parse<Lang>(match.Groups["lang"].Value.ToUpper()) : Lang.MULTI;
             name = match.Groups["num"].Value;
-            name += match.Groups["lang"].Success ? "_" + match.Groups["lang"].Value : string.Empty;
+            //name += match.Groups["lang"].Success ? "_" + match.Groups["lang"].Value : string.Empty;
             name += match.Groups["index"].Success ? "_" + match.Groups["index"].Value : string.Empty;
             fileType = match.Groups["ext"].Value;
         }
@@ -289,10 +290,6 @@ static public class Util
             language = lang;
             crc = Crc32.getUIntResult(bytes);
         }
-    }
-    public static string getFileName(OriginalFile f)
-    {
-        return f.FileMetaData.FileName + "." + f.FileMetaData.FileType;
     }
 
     public static string getFileName(ConvertedFile f)
