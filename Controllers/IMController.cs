@@ -96,24 +96,25 @@ public class IMController : Controller
     }
 
     [HttpPost("{imageName}", Name = "PostProcessLabeledImages")]
-    public void ProcessImages(string imageName, string? label, string? conversionName)
+    public void ProcessImages(string imageName, string? label, string? conversionName, string? language)
     {
         // context.HttpContext.Request.Body;  
         // HttpContext.Request.Body;
         foreach (var f in this.originalRepo.GetDirectoryContents("").Where(f => f.Name == imageName))
         {
-            logger.LogInformation($"FileName: {f.Name} | Label: {label} | ConversionName: {conversionName}");
+            logger.LogInformation($"FileName: {f.Name} | Label: {label} | ConversionName: {conversionName} | Lang: {language}");
             if (GetFormatInformation(f.PhysicalPath) != null)
             {
                 Util.checkFile(f, logger, out string name, out string num, out Lang lang, out string type, out uint crc);
-                var originalFile = ofs.SingleOrDefault(c => c.FileMetaData.FileName == name);
+                var originalFile = ofs.SingleOrDefault(c => c.FileMetaData.FileName == name && c.FileMetaData.Language == lang);
                 if (originalFile != null)
                 {
                     var removeFiles = false;
                     var c = originalFile.Conversions.GetEnumerator();
                     while (c.MoveNext())
                     {
-                        if (String.IsNullOrEmpty(conversionName) || c.Current.ConversionName == conversionName)
+                        if ((String.IsNullOrEmpty(conversionName) || c.Current.ConversionName == conversionName) &&
+                            (language == null || c.Current.Language.ToString() == language))
                         {
                             if (c.Current.Label != label)
                                 removeFiles = true;

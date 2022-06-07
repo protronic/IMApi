@@ -154,6 +154,7 @@ static public class Util
             Width = 500,
             Height = 500,
             BackgroundColor = "#FFFFFFFF",
+            Language = Lang.EN
         },
         new ConversionInfo {
             ConversionName = "thumb",
