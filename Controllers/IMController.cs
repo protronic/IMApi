@@ -56,13 +56,28 @@ public class IMController : Controller
         return db.OriginalFiles.Where(o => o.FileMetaData.Artikelnummer == itemId).Select(o => o.FileMetaData);
     }
 
-    [HttpDelete(Name = "DeleteConvertedFiles")]
+    [HttpDelete("ConvertedFiles", Name = "DeleteConvertedFiles")]
     public void DeleteConvertedFiles()
     {
-
         var del = db.ConvertedFiles.Include(cf => cf.FileMetaData);
         db.FileMeta.RemoveRange(del.Select(cf => cf.FileMetaData));
         db.ConvertedFiles.RemoveRange(del);
+        db.SaveChanges();
+    }
+
+    [HttpDelete("Clean", Name = "CleanDB")]
+    public void CleanDB()
+    {
+        foreach (var o in this.ofs)
+        {
+            if (GetFormatInformation(o.FilePath) == null)
+            {
+                removeConvertedFileInfo(o, o.FilePath + " not found");
+                db.Conversions.RemoveRange(o.Conversions);
+                db.FileMeta.Remove(o.FileMetaData);
+                db.OriginalFiles.Remove(o);
+            }
+        }
         db.SaveChanges();
     }
 
@@ -71,7 +86,7 @@ public class IMController : Controller
     {
         foreach (var f in this.originalRepo.GetDirectoryContents(""))
         {
-            if (GetFormatInformation(f) != null)
+            if (GetFormatInformation(f.PhysicalPath) != null)
             {
                 var originalFile = checkFileHasChanged(f);
                 processConverts(originalFile);
@@ -88,7 +103,7 @@ public class IMController : Controller
         foreach (var f in this.originalRepo.GetDirectoryContents("").Where(f => f.Name == imageName))
         {
             logger.LogInformation($"FileName: {f.Name} | Label: {label} | ConversionName: {conversionName}");
-            if (GetFormatInformation(f) != null)
+            if (GetFormatInformation(f.PhysicalPath) != null)
             {
                 Util.checkFile(f, logger, out string name, out string num, out Lang lang, out string type, out uint crc);
                 var originalFile = ofs.SingleOrDefault(c => c.FileMetaData.FileName == name);
@@ -126,16 +141,14 @@ public class IMController : Controller
         db.SaveChanges();
     }
 
-    private IMagickFormatInfo? GetFormatInformation(IFileInfo file)
+    private IMagickFormatInfo? GetFormatInformation(string file)
     {
-        return MagickNET.GetFormatInformation(file.PhysicalPath)
-            ?? MagickNET.GetFormatInformation(new MagickImageInfo(file.PhysicalPath).Format);
+        return MagickNET.GetFormatInformation(file)
+            ?? MagickNET.GetFormatInformation(new MagickImageInfo(file).Format);
     }
 
     private void processConverts(OriginalFile originalFile)
     {
-        var fileName = Util.getFileName(originalFile);
-
         foreach (ConversionInfo con in originalFile.Conversions)
         {
             var convertedFile = originalFile.ConvertedFiles.Where(c => ConversionInfo.Comparer.Equals(c.Conversion, con)).SingleOrDefault();
@@ -148,7 +161,7 @@ public class IMController : Controller
 
             if (convertedFile == null)
             {
-                var convertedFileInfo = ConvertImageFromOneFormatToAnother(fileName, con);
+                var convertedFileInfo = ConvertImageFromOneFormatToAnother(originalFile, con);
                 Util.checkFile(convertedFileInfo, logger, out string name, out string num, out Lang lang, out string type, out uint crc);
                 originalFile.ConvertedFiles.Add(new ConvertedFile
                 {
@@ -160,7 +173,8 @@ public class IMController : Controller
                         FileCrc = crc,
                         FileLength = convertedFileInfo.Length,
                         Artikelnummer = num,
-                        WebURL = new Uri("/img/out/" + con.ConversionName + "/" + fileName, UriKind.Relative)
+                        Language = con.Language,
+                        WebURL = new Uri("/img/out/" + con.Language + "/" + con.ConversionName + "/" + name + "." + type, UriKind.Relative)
                     },
                     Conversion = con,
                 });
@@ -173,7 +187,7 @@ public class IMController : Controller
         Util.checkFile(file, logger, out string name, out string num, out Lang lang, out string type, out uint crc);
         var c = String.IsNullOrEmpty(label) ? Util.DEFAULT_CONVERSIONS : Util.getLabeledConversionInfo(label);
         c = c.Where(con => (String.IsNullOrEmpty(conversionName) || con.ConversionName == conversionName)).ToArray();
-        var originalFile = ofs.SingleOrDefault(c => c.FileMetaData.FileName == name) ?? new OriginalFile
+        var originalFile = ofs.SingleOrDefault(c => c.FileMetaData.FileName == name && c.FileMetaData.Language == lang) ?? new OriginalFile
         {
             FilePath = file.PhysicalPath,
             FileMetaData = new FileMeta
@@ -200,10 +214,10 @@ public class IMController : Controller
         return originalFile;
     }
 
-    private IFileInfo ConvertImageFromOneFormatToAnother(string srcfile, ConversionInfo con)
+    private IFileInfo ConvertImageFromOneFormatToAnother(OriginalFile srcfile, ConversionInfo con)
     {
         IFileInfo outfile;
-        var srcFilePath = originalRepo.GetFileInfo(srcfile).PhysicalPath;
+        var srcFilePath = srcfile.FilePath;
         var conversionFilePath = con.ConveretedFilePath;
         outfile = convertedRepo.GetFileInfo(conversionFilePath);
         var dir = Path.GetDirectoryName(outfile.PhysicalPath);
