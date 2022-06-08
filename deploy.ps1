@@ -1,5 +1,5 @@
 param([string]$cmd = "")
-$sess = New-PSSession -ComputerName prot-exchange -Credential admin.mb;
+$sess = New-PSSession -ComputerName prot-exchange -Credential (Get-Credential);
 
 # restart app without rebuilding / reuploading by running ".\publish.ps1 restart"
 if ( $cmd -ne "restart" ){
