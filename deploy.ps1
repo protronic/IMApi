@@ -4,7 +4,7 @@ $sess = New-PSSession -ComputerName prot-exchange -Credential (Get-Credential);
 # restart app without rebuilding / reuploading by running ".\publish.ps1 restart"
 if ( $cmd -ne "restart" ){
   dotnet publish -c Release;
-  Copy-Item -Recurse -Path "bin/Release/net6.0/publish" -Destination "E:/imapi" -ToSession $sess -Force;
+  Copy-Item -Recurse -Path "bin/Release/net10.0/publish" -Destination "E:/imapi" -ToSession $sess -Force;
 }
 
 # Invoke-Command -Session $sess -ScriptBlock {
