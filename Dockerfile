@@ -1,22 +1,34 @@
 # syntax=docker/dockerfile:1
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build-env
-WORKDIR /app
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+ARG TARGETARCH
+WORKDIR /src
 
-# Copy csproj and restore as distinct layers
-COPY *.csproj ./
-RUN dotnet restore
+# Restore as a separate layer. Publishing for the target architecture only keeps
+# the native ImageMagick libraries of the other platforms out of the image.
+COPY IMApi.csproj ./
+RUN dotnet restore IMApi.csproj -a $TARGETARCH
 
-# Copy everything else and build
-COPY ./ ./
-RUN dotnet publish -c Release -o out
+COPY . .
+RUN dotnet publish IMApi.csproj -c Release -a $TARGETARCH --no-restore -o /app
 
-# Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
-WORKDIR /app
-COPY --from=build-env /app/out .
-# Since .NET 8 the images listen on 8080 by default; keep port 80 for existing deployments
-ENV ASPNETCORE_HTTP_PORTS=80
-EXPOSE 80
-ENTRYPOINT ["dotnet", "IMApi.dll"]
+# Liberation Sans (metric-compatible with Arial) for the texts in the images
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends fonts-liberation \
+    && rm -rf /var/lib/apt/lists/*
 
-# docker run -dit -p 8180:80 -v /var/docker/imapi/wwwroot/images/out:/app/wwwroot/images/out
+WORKDIR /app
+COPY --from=build /app .
+
+# SQLite database with the image texts. 1000:1000 is the default user of the
+# opencloud-compose containers (OC_CONTAINER_UID_GID).
+RUN mkdir -p /data && chown 1000:1000 /data
+VOLUME /data
+
+ENV ASPNETCORE_HTTP_PORTS=8080 \
+    ImApi__DatabasePath=/data/imapi.db \
+    ImApi__LabelFont=/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf
+
+EXPOSE 8080
+USER 1000:1000
+ENTRYPOINT ["dotnet", "IMApi.dll"]

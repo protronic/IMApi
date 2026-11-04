@@ -1,21 +1,17 @@
-#Must be the first statement in your script (not coutning comments)
-param([string]$cmd = "watch") 
+# Local development helpers.
+#   .\start.ps1                  run with hot reload (dotnet watch)
+#   .\start.ps1 test             run the tests
+#   .\start.ps1 migration <Name> add an EF Core migration after changing the model
+# The database (data/imapi.db) is created and migrated automatically on startup.
+param([string]$cmd = "watch", [string]$name = "")
 
-if ($cmd -eq "update" || $cmd -eq "upgrade") {
-  if (Test-Path .\wwwroot\CeckedFileInfo.db) { 
-    Remove-Item -r -force .\wwwroot\CeckedFileInfo.db;
-  }  
-  Remove-Item -r -force .\wwwroot\images\out\*;
-}
-
-if ($cmd -eq "upgrade") {
-  dotnet ef migrations remove --force;
-  dotnet ef migrations add InitialCreate;
-  dotnet ef database update;
-}
-if ($cmd -eq "update") {
-  dotnet ef database update;
-}
 if ($cmd -eq "watch") {
-  dotnet watch;
+  dotnet watch
+}
+if ($cmd -eq "test") {
+  dotnet test --project tests/IMApi.Tests
+}
+if ($cmd -eq "migration") {
+  if (-not $name) { throw "Usage: .\start.ps1 migration <Name>" }
+  dotnet ef migrations add $name
 }

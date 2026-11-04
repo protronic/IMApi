@@ -1,2 +1,9 @@
-bin/
-obj/
+**/bin/
+**/obj/
+data/
+tests/
+.git/
+.github/
+.vscode/
+*.md
+*.ps1
