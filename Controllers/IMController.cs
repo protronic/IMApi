@@ -144,8 +144,8 @@ public class IMController : Controller
 
     private IMagickFormatInfo? GetFormatInformation(string file)
     {
-        return MagickNET.GetFormatInformation(file)
-            ?? MagickNET.GetFormatInformation(new MagickImageInfo(file).Format);
+        return MagickFormatInfo.Create(file)
+            ?? MagickFormatInfo.Create(new MagickImageInfo(file).Format);
     }
 
     private void processConverts(OriginalFile originalFile)
@@ -233,7 +233,7 @@ public class IMController : Controller
 
             image.Strip();
             image.Quality = 100;
-            if (con.Width > 0 && con.Height > 0) image.Resize(con.Width, con.Height);
+            if (con.Width > 0 && con.Height > 0) image.Resize((uint)con.Width, (uint)con.Height);
 
             var shadow = new MagickImage(image.Clone());
             shadow.Quality = 100;
@@ -241,7 +241,7 @@ public class IMController : Controller
             shadow.BackgroundColor = new MagickColor(con.BackgroundColor); // -background from db
                                                                            // +swap changes the order of the images we just add them in a different order
                                                                            // -alpha set
-            image.Alpha(AlphaOption.Set);
+            image.Alpha(AlphaAction.Set);
             // -virtual-pixel transparent
             image.VirtualPixelMethod = VirtualPixelMethod.Transparent;
             // -channel A means that the next operations should only change the alpha channel
