@@ -119,3 +119,6 @@ src/.vs/config/applicationhost.config
 .idea/
 *.db-*
 wwwroot/images/out/*
+
+# local database
+data/
